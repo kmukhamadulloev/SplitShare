@@ -1,0 +1,142 @@
+openapi: 3.1.0
+info:
+  title: SplitShare API
+  version: 0.1.0
+  description: Initial contract scaffold. Refine during ordered implementation phases.
+servers:
+  - url: /
+paths:
+  /api/v1/status:
+    get:
+      summary: Read client-visible server/share status
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+  /api/v1/files:
+    get:
+      summary: List a virtual directory
+      parameters:
+        - in: query
+          name: path
+          schema: { type: string, default: / }
+      responses:
+        '200':
+          description: Directory listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [path, entries]
+                properties:
+                  path: { type: string }
+                  entries:
+                    type: array
+                    items: { $ref: '#/components/schemas/FileEntry' }
+  /api/v1/uploads:
+    post:
+      summary: Stream one file into a virtual destination
+      parameters:
+        - in: query
+          name: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '202':
+          description: Upload accepted
+        '409':
+          description: Name conflict requiring explicit resolution
+  /api/v1/files/download:
+    get:
+      summary: Download or Range-read a file
+      parameters:
+        - in: query
+          name: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Full file }
+        '206': { description: Partial content }
+        '416': { description: Invalid range }
+  /api/v1/directories:
+    post:
+      summary: Create a directory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [parent, name]
+              properties:
+                parent: { type: string }
+                name: { type: string }
+      responses:
+        '201': { description: Created }
+  /api/v1/files/rename:
+    post:
+      summary: Rename an item
+      responses:
+        '200': { description: Renamed }
+  /api/v1/events:
+    get:
+      summary: Server-Sent Events stream
+      responses:
+        '200':
+          description: text/event-stream
+  /api/v1/host/settings:
+    get:
+      summary: Read host settings
+      responses:
+        '200': { description: Host settings }
+        '403': { description: Host client required }
+    put:
+      summary: Update host settings
+      responses:
+        '200': { description: Updated }
+        '403': { description: Host client required }
+components:
+  schemas:
+    Status:
+      type: object
+      required: [version, sharing, local_client, permissions]
+      properties:
+        version: { type: string }
+        sharing: { type: boolean }
+        local_client: { type: boolean }
+        permissions:
+          $ref: '#/components/schemas/Permissions'
+    Permissions:
+      type: object
+      required: [browse, download, upload, create_directory, rename, delete]
+      properties:
+        browse: { type: boolean }
+        download: { type: boolean }
+        upload: { type: boolean }
+        create_directory: { type: boolean }
+        rename: { type: boolean }
+        delete: { type: boolean }
+    FileEntry:
+      type: object
+      required: [path, name, kind]
+      properties:
+        path: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [file, directory] }
+        size: { type: [integer, 'null'] }
+        modified: { type: [string, 'null'], format: date-time }
+        mime: { type: [string, 'null'] }

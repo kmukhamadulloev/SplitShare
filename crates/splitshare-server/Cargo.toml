@@ -1,0 +1,19 @@
+[package]
+name = "splitshare-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Axum HTTP API, SSE, Range responses and embedded WebUI serving."
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+serde.workspace = true
+rust-embed.workspace = true
+mime_guess.workspace = true
+
+[dev-dependencies]
+tower.workspace = true
+serde_json.workspace = true

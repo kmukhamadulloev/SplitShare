@@ -1,0 +1,17 @@
+/target/
+/web/node_modules/
+/web/dist/
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+release/
+coverage/
+playwright-report/
+test-results/
+
+/web/*.tsbuildinfo

@@ -1,0 +1,18 @@
+[package]
+name = "splitshare"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "SplitShare desktop composition root"
+
+[dependencies]
+splitshare-core = { path = "../../crates/splitshare-core" }
+splitshare-storage = { path = "../../crates/splitshare-storage" }
+splitshare-network = { path = "../../crates/splitshare-network" }
+splitshare-server = { path = "../../crates/splitshare-server" }
+splitshare-platform = { path = "../../crates/splitshare-platform" }
+tokio.workspace = true
+tokio-util.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

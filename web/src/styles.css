@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+:root {
+  --ss-indigo: #6366F1;
+  --ss-purple: #A855F7;
+  --ss-cyan: #22D3EE;
+  --ss-text: #E2E8F0;
+  --ss-muted: #94A3B8;
+  --ss-bg: #0F172A;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--ss-bg);
+}
