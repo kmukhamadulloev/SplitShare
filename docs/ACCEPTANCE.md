@@ -205,3 +205,37 @@ No HTTP contracts changed; existing mutation, download, transfer, settings and S
 endpoints support this phase. Native tray is Phase 07. Native Windows/macOS runtime,
 physical mobile devices, Firefox/Safari, manual screen-reader checks and release
 stress/packaging gates remain pending in ISSUES.md. This is local phase acceptance.
+
+## Phase 07 implementation checkpoint — 2026-10-01
+
+| Criterion | Result | Evidence / remaining gate |
+|---|---|---|
+| Tray is native and follows platform conventions | PASS locally | Actual GTK/AppIndicator menu; Windows/macOS code cross-compiles, native convention checks pending |
+| No custom tray dashboard | PASS | Native menu only; no window/webview; settings use local Vue UI |
+| Quit cleans/cancels active uploads safely | PASS locally | Real Linux native Quit during unfinished upload; composition-root Stop cancellation and cleanup tests |
+| Tray failure does not corrupt server operation | PASS locally | Deliberately unavailable display leaves HTTP usable and exits gracefully on SIGTERM |
+| Native smoke tests recorded for all release platforms | FAIL — pending | Linux recorded; native Windows/macOS execution unavailable here; phase remains open |
+
+All commands below passed for this checkpoint:
+
+- `bash scripts/check.sh`: formatting, Clippy with warnings denied, 51 Rust tests,
+  frontend typecheck, two frontend unit test files and production build.
+- `cargo build --locked -p splitshare` and `bash scripts/build-release.sh`.
+- `npm run test:e2e --prefix web`: 16 desktop/mobile Chromium tests.
+- `/usr/bin/python3 scripts/smoke-tray-linux.py`: native Linux menu, Stop/Start,
+  fresh links, stable port and native Quit/active-upload cleanup.
+- `python3 scripts/smoke-tray-fallback.py`: failed-display headless recovery.
+- `python3 scripts/smoke-foundation.py` and `python3 scripts/smoke-sessions.py`.
+- `cargo check --locked --workspace --all-targets --target x86_64-pc-windows-msvc
+  --target-dir /tmp/splitshare-tray-windows-check`: compile only.
+- `cargo check --locked --workspace --all-targets --target x86_64-apple-darwin
+  --target-dir /tmp/splitshare-tray-macos-check`: compile only.
+
+No HTTP contract changed. Settings deep-link entry remains guarded by actual
+server-reported host locality; all backend host authorization remains enforced.
+The native platform smoke matrix and remaining manual OS-action checks are in
+`docs/TRAY.md`. Phase 08 is not started.
+
+Checkpoint upload memory regression: `python3 scripts/test-upload-memory.py` PASS,
+8 MiB / 256 MiB uploads at 15.61 / 15.85 MiB peak RSS before the final opener-only
+error-reporting adjustment.

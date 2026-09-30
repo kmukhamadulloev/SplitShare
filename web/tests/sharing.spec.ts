@@ -60,3 +60,10 @@ test('host settings, local QR, join cookie and token rotation', async ({ page, r
   expect(saved.share_mode).toBe('open_lan')
   await request.put('/api/v1/host/settings', { headers: { 'X-SplitShare-Request': '1' }, data: initial })
 })
+
+test('native settings link opens the host settings dialog', async ({ page }) => {
+  await page.goto('/#settings')
+  await expect(page.getByRole('dialog',{name:'Host settings',exact:true})).toBeVisible()
+  await expect(page.getByRole('checkbox',{name:'Browse',exact:true})).toBeVisible()
+  await expect(page).not.toHaveURL(/#settings$/)
+})

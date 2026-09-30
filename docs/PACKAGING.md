@@ -58,3 +58,14 @@ For each produced artifact:
 6. upload and download;
 7. quit gracefully;
 8. ensure no dependency on repo/node_modules.
+
+## Native tray prerequisites (Phase 07)
+
+Linux builds require GTK3 and Ayatana AppIndicator development packages. On the
+Ubuntu CI image: `libgtk-3-dev libayatana-appindicator3-dev`. Release hosts need the
+corresponding GTK3/AppIndicator runtime libraries and a desktop tray/status-notifier
+implementation. `--no-tray` avoids display initialization, but this desktop binary
+still links GTK libraries. No Node or webview runtime is added.
+
+The native menu embeds the branding PNG. Windows executable resources and macOS
+bundle icons/identity remain packaging work for the release artifact phase.

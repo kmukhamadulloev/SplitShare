@@ -18,9 +18,13 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: web/package-lock.json
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libayatana-appindicator3-dev
       - run: npm ci --prefix web
       - run: bash scripts/check.sh
       - run: bash scripts/build-release.sh
+      - if: runner.os == 'Linux'
+        run: python3 scripts/smoke-tray-fallback.py
       - if: runner.os == 'Linux'
         run: python3 scripts/smoke-foundation.py
       - if: runner.os == 'Linux'

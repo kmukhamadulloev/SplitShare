@@ -17,3 +17,8 @@ tokio-util.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 splitshare-application = { path = "../../crates/splitshare-application" }
+
+[dev-dependencies]
+tempfile.workspace = true
+reqwest.workspace = true
+futures-util.workspace = true

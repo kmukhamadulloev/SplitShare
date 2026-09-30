@@ -128,7 +128,8 @@ SSE and the initial file-manager UI. Phase 04 adds streamed uploads, an enforced
 parallel queue, cancellation/retry and clipboard workflows. Phase 05 adds token
 sessions, remote permissions, persisted host settings and local QR sharing. Phase 06
 adds the responsive production file manager, typed icons, selection actions,
-accessible menus/dialogs and reconnect recovery. See [running and access policy](docs/HTTP_BROWSER.md).
+accessible menus/dialogs and reconnect recovery. Phase 07 adds a native tray and
+Start/Stop/Quit lifecycle (Windows/macOS native smoke pending). See [running and access policy](docs/HTTP_BROWSER.md).
 See [foundation decisions](docs/FOUNDATION.md). Rust 1.98+ and Node 24+ are required for development.
 
 ```bash
@@ -181,3 +182,7 @@ A future mobile host may reuse the Rust core as a native library and use a thin 
 ## License
 
 MIT.
+
+Desktop startup attempts a native tray. Use `--no-tray` for terminal/headless use
+and `--open` to open the browser at startup. Linux builds need GTK3/AppIndicator
+packages; see [tray behavior](docs/TRAY.md) and [packaging prerequisites](docs/PACKAGING.md).

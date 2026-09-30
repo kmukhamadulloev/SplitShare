@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory() as directory:
     shutil.copy2(binary, executable)
     env = dict(os.environ, XDG_DATA_HOME=str(root / 'data'))
     with (root / 'server.log').open('w+') as log:
-        process = subprocess.Popen([str(executable)], cwd=root, env=env, stdout=log, stderr=log)
+        process = subprocess.Popen([str(executable), '--no-tray'], cwd=root, env=env, stdout=log, stderr=log)
         try:
             for _ in range(100):
                 assert process.poll() is None, 'Server exited before startup'

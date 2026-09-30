@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory(prefix='splitshare-sessions-') as directory:
     tokens = []
     with (root / 'server.log').open('w+') as log:
         for run in range(2):
-            process = subprocess.Popen([str(binary), '--root', str(share), '--bind', '127.0.0.1:43125'], env=env, stdout=log, stderr=log)
+            process = subprocess.Popen([str(binary), '--no-tray', '--root', str(share), '--bind', '127.0.0.1:43125'], env=env, stdout=log, stderr=log)
             try:
                 for _ in range(100):
                     assert process.poll() is None

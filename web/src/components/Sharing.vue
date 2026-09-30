@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { QrCode, Settings, Copy, RefreshCw, LogOut } from '@lucide/vue'
 import QRCode from 'qrcode'
 import { request, type Permissions } from '../app/api'
@@ -54,6 +54,15 @@ async function copy() {
   try { await navigator.clipboard.writeText(selected.value); notice.value = 'Link copied.' }
   catch { urlInput.value?.focus(); urlInput.value?.select(); notice.value = 'Select and copy the link above.' }
 }
+function settingsRoute() {
+  if (location.hash === '#settings' && files.status?.local_client && !settingsDialog.value?.open) {
+    history.replaceState(null,'',location.pathname + location.search)
+    void settings()
+  }
+}
+watch(() => files.status?.local_client, settingsRoute)
+onMounted(() => { window.addEventListener('hashchange', settingsRoute); settingsRoute() })
+onUnmounted(() => window.removeEventListener('hashchange', settingsRoute))
 async function leave() { try { await request('/session/leave','POST'); location.reload() } catch (cause) { files.error = (cause as Error).message } }
 </script>
 <template>

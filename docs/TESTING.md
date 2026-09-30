@@ -258,3 +258,37 @@ Screenshots of list/grid, menus, transfers, QR and settings are written under th
 ignored `web/test-results/` directory. The viewport test is mobile emulation, not
 physical-device or Safari/Firefox evidence. Release build and foundation/session
 smokes validate the same assets embedded in the standalone Rust executable.
+
+## Phase 07 checkpoint checks
+
+`bash scripts/check.sh` includes three composition-root lifecycle tests and an
+embedded native-icon test (51 Rust tests total). Listener tests use actual HTTP:
+Stop/rebind, occupied-port recovery, fresh tokens, settings retention, cancellation
+and partial-file cleanup. `npm run test:e2e --prefix web` has 16 tests, including
+host-only `#settings` entry on desktop/mobile. Browser fixtures pass `--no-tray`.
+
+On a Linux desktop with GTK3/AppIndicator and the system Python Gio bindings:
+
+```bash
+cargo build --locked -p splitshare
+/usr/bin/python3 scripts/smoke-tray-linux.py
+```
+
+This starts an isolated debug host on port 43126 and discovers only that process's
+native menu through the session bus. It checks menu labels, Stop/Start with stable
+port and new link, and native Quit during an unfinished upload with partial-file
+cleanup. It does not click Open/Settings or overwrite the user's clipboard.
+
+After `bash scripts/build-release.sh`:
+
+```bash
+python3 scripts/smoke-tray-fallback.py
+python3 scripts/smoke-foundation.py
+python3 scripts/smoke-sessions.py
+python3 scripts/test-upload-memory.py
+```
+
+Fallback smoke uses port 43128 and deliberately unavailable display addresses,
+then verifies HTTP and graceful signal exit. The ordinary smokes run `--no-tray`.
+Native Windows/macOS menu, clipboard/opener and shutdown smoke must be run on those
+hosts; cross-target compilation does not satisfy that acceptance requirement.

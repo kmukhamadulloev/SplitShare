@@ -15,8 +15,11 @@ No public release has been produced from this scaffold.
   remote capabilities, persisted host settings and selectable locally generated QR.
 - Phase 06: production List/Grid file manager, typed icons, selection actions,
   desktop context menus/mobile sheets, accessible dialogs and SSE reconnect recovery.
+- Phase 07 checkpoint: native tray adapter, OS actions, host settings entry,
+  stable Start/Stop listener lifecycle and graceful Quit; native Windows/macOS
+  smoke acceptance remains pending.
 - Local Linux tests pass; native Windows/macOS runtime verification is pending.
-  Native tray, reliability hardening and release packaging remain later phases.
+  Native platform verification, reliability hardening and release packaging remain.
 
 ## Planned
 

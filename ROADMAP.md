@@ -16,7 +16,7 @@ The project intentionally follows a release-quality path instead of an MVP path.
 | 04 | Transfers + clipboard | Implemented; Linux/browser acceptance PASS, native runtime CI pending |
 | 05 | Sessions + permissions + QR | Implemented; Linux/browser acceptance PASS, native/device validation pending |
 | 06 | Production WebUI | Implemented; Linux/browser acceptance PASS, native/device validation pending |
-| 07 | Desktop tray + lifecycle | Planned |
+| 07 | Desktop tray + lifecycle | ACTIVE — implementation checkpoint; Linux PASS; Windows/macOS native smoke pending |
 | 08 | Reliability + security + performance | Planned |
 | 09 | Packaging + v1.0 acceptance | Planned |
 

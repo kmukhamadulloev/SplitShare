@@ -26,3 +26,10 @@ Turn SplitShare into a polished native desktop host without adding a desktop web
 - quit cleans/cancels active uploads safely;
 - tray failure does not corrupt server operation;
 - native smoke tests recorded for all release platforms.
+
+## Implementation checkpoint
+
+Native tray and lifecycle implementation is available. Linux native menu and
+failure fallback have local evidence; Windows/macOS cross-compilation is not a
+substitute for their native smoke acceptance. This phase remains open until that
+gate passes. See `docs/TRAY.md` and `docs/ACCEPTANCE.md` for the platform record.

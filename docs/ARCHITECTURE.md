@@ -235,3 +235,8 @@ host-only HTTP adapters, native atomic settings persistence and typed IPv4 netwo
 candidates. Policy is independent of Axum; HTTP maps routes to capabilities and
 passes socket-derived locality. Vue renders bundled QR images and host settings.
 See [SESSIONS.md](SESSIONS.md) for policy and stream invalidation boundaries.
+
+Phase 07 adds native desktop adapters in `splitshare-platform::desktop`. The
+composition root's Host controller owns listener start/stop, preserved sandbox
+capabilities, settings retention and shutdown. A typed in-process command channel
+keeps desktop controls separate from HTTP authorization. See [TRAY.md](TRAY.md).

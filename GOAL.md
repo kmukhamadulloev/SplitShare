@@ -1,8 +1,8 @@
-# Current Goal — Phase 06 Production WebUI
+# Current Goal — Phase 07 Desktop Tray and Host Lifecycle
 
-The latest completed implementation goal is:
+The active implementation goal is:
 
-`goals/PHASE_06_PRODUCTION_WEBUI.md`
+`goals/PHASE_07_DESKTOP_TRAY_LIFECYCLE.md`
 
 ## Product release program
 
@@ -43,9 +43,8 @@ Future mobile host work may reuse the Rust core through a native library, but cu
 
 ## Latest checkpoint
 
-Phase 06 passed local acceptance: production file-manager layout, accessible
-menus/dialogs, file type icons and reliable connection states. See
-`docs/ACCEPTANCE.md` for individual criteria and validation evidence.
-
-Next planned phase: `goals/PHASE_07_DESKTOP_TRAY_LIFECYCLE.md`. Phase 07 has not started.
-Native platform/device validation remains pending.
+Phase 07 native tray/lifecycle implementation checkpoint is delivered, with local
+Linux menu and failure-recovery validation. Phase 07 remains active: its mandatory
+native Windows/macOS smoke gate is not yet satisfied. See `docs/TRAY.md` and
+`docs/ACCEPTANCE.md` for evidence and remaining native OS-action checks.
+Phase 08 has not started.

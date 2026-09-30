@@ -6,7 +6,9 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 - Decisions and resolved dependency choices: [FOUNDATION.md](docs/FOUNDATION.md).
 - [ ] Run configured native Windows/macOS CI checks; only Linux is locally verified.
-- [ ] Validate tray-icon 0.25.1 native event loops and Linux desktop prerequisites in Phase 07.
+- [ ] Complete Phase 07 native Windows/macOS tray smoke; Linux native menu/lifecycle smoke is implemented.
+- [ ] Manually validate browser/folder openers and clipboard on each desktop, including Wayland-only Linux.
+- Tray dependency is pinned to 0.24.2 because 0.25.1 requires unavailable `dirs ^7` with libappindicator; see `docs/TRAY.md`.
 
 ## Storage
 

@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory() as directory:
     root = Path(directory)
     share = root / 'share'
     share.mkdir()
-    process = subprocess.Popen([str(binary), '--root', str(share), '--bind', '127.0.0.1:43124'], env=dict(os.environ, XDG_DATA_HOME=str(root / 'config')), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    process = subprocess.Popen([str(binary), '--no-tray', '--root', str(share), '--bind', '127.0.0.1:43124'], env=dict(os.environ, XDG_DATA_HOME=str(root / 'config')), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     def rss():
         for line in Path(f'/proc/{process.pid}/status').read_text().splitlines():
             if line.startswith('VmRSS:'):

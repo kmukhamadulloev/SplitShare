@@ -1,4 +1,5 @@
 //! Native configuration adapter. Host paths never enter HTTP response types.
+pub mod desktop;
 use directories::BaseDirs;
 use splitshare_core::HostSettings;
 use std::{
