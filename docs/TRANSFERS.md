@@ -130,8 +130,8 @@ Format detection is a convenience only. Never execute pasted content.
 ## Implemented Phase 04 policy
 
 Host configuration is loaded at startup. `--parallel-uploads N` selects 1–32
-workers; `--serial-uploads` forces one. Overrides are process-local. Runtime host
-settings authorization/UI belongs to Phase 05.
+workers; `--serial-uploads` forces one. Overrides are process-local until the next host settings save. Phase 05 adds
+persisted runtime limits; changing the effective limit requires idle transfers.
 
 TransferManager lives in the application layer and does not depend on Axum.
 A permit is acquired before consuming the request body and retained through
@@ -151,7 +151,9 @@ and limits scheduling to the advertised policy (at most six browser requests).
 Pasted images require preview confirmation; text is a local draft until Save and
 is limited to 2 MiB. File paste and drag/drop use the same upload queue. Unknown
 sizes have no invented percentage. Failed/cancelled rows do not claim publication.
-Token/session ownership is Phase 05; current cancellation uses the separate key.
+Token-mode remote requests require a session; cancellation additionally requires
+the separate transfer key. History is share-wide for upload-capable clients.
+Session revocation cancels remote transfers before publication (see SESSIONS.md).
 
 Linux memory regression: `python3 scripts/test-upload-memory.py` runs the release
 binary with 8 MiB and 256 MiB generated uploads and checks RSS growth below 32 MiB.

@@ -370,7 +370,7 @@ async fn traversal_origin_host_body_limits_and_forwarding_headers() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), 403);
+    assert_eq!(response.status(), 401);
     server.stop().await;
 }
 

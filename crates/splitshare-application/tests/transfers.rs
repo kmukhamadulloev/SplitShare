@@ -246,3 +246,28 @@ async fn queued_disconnect_becomes_terminal_and_history_is_bounded() {
     assert_eq!(manager.snapshot().len(), 128);
     assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 130);
 }
+
+#[tokio::test]
+async fn runtime_limits_change_only_when_idle_and_save_succeeds() {
+    use splitshare_application::sessions::AccessError;
+    let (_root, manager, _) = setup(false, 3);
+    assert_eq!(
+        manager.configure_limit(2, || Err(AccessError::Save)),
+        Err(AccessError::Save)
+    );
+    assert_eq!(manager.limit(), 1);
+    manager.configure_limit(2, || Ok(())).unwrap();
+    assert_eq!(manager.limit(), 2);
+    let (sender, receiver) = mpsc::channel(1);
+    let cloned = manager.clone();
+    let task = tokio::spawn(async move { cloned.upload(request(1, None), stream(receiver)).await });
+    until(&manager, |items| !items.is_empty()).await;
+    assert_eq!(
+        manager.configure_limit(1, || panic!("must not save while busy")),
+        Err(AccessError::Busy)
+    );
+    drop(sender);
+    task.await.unwrap().unwrap();
+    manager.configure_limit(1, || Ok(())).unwrap();
+    assert_eq!(manager.limit(), 1);
+}

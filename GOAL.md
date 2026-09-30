@@ -1,8 +1,8 @@
-# Current Goal — Phase 04 Transfers and Clipboard
+# Current Goal — Phase 05 Sessions, Permissions and QR
 
 The active implementation goal is:
 
-`goals/PHASE_04_TRANSFERS_CLIPBOARD.md`
+`goals/PHASE_05_SESSIONS_PERMISSIONS_QR.md`
 
 ## Product release program
 
@@ -43,7 +43,8 @@ Future mobile host work may reuse the Rust core through a native library, but cu
 
 ## Latest checkpoint
 
-Phase 04 implementation and local acceptance passed: streamed uploads, backend
-concurrency/progress/cancellation, browser queue and clipboard workflows.
-See the active phase for individual criteria and evidence. Phase 05 is next and
-has not started. Native Windows/macOS runtime validation remains pending.
+Phase 05 implementation and local acceptance passed: cryptographic token sessions,
+backend remote permissions, persisted host settings and selectable local QR sharing.
+See the active phase for individual criteria and evidence. Phase 06 (Production
+WebUI) is next and has not started. Native Windows/macOS runtime and physical-device
+LAN/QR validation remain pending.

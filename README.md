@@ -125,7 +125,8 @@ A database may be added only by an explicit later goal that requires persistent 
 
 Phase 03 supports real HTTP browsing, file mutations, streamed downloads/Range,
 SSE and the initial file-manager UI. Phase 04 adds streamed uploads, an enforced
-parallel queue, cancellation/retry and clipboard workflows. See [running and access policy](docs/HTTP_BROWSER.md).
+parallel queue, cancellation/retry and clipboard workflows. Phase 05 adds token
+sessions, remote permissions, persisted host settings and local QR sharing. See [running and access policy](docs/HTTP_BROWSER.md).
 See [foundation decisions](docs/FOUNDATION.md). Rust 1.98+ and Node 24+ are required for development.
 
 ```bash
@@ -138,7 +139,10 @@ http://127.0.0.1:8080. Ctrl+C stops development processes.
 
 For a standalone binary: `./scripts/build-release.sh`, then run
 `./target/release/splitshare --root /path/to/share`. Node is not required at runtime.
-LAN access requires explicit `--bind 0.0.0.0:8080 --open-lan`; token sessions are Phase 05.
+For LAN sharing, add `--bind 0.0.0.0:8080`, then open **Share with QR** on the host
+and select a reachable address. Token links are the default; `--open-lan` explicitly
+allows reachable clients without a token. Host settings control remote permissions
+and upload limits. See [session and QR policy](docs/SESSIONS.md).
 
 Frontend:
 

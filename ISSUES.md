@@ -26,7 +26,7 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 - [ ] Native filesystem changes do not yet emit SSE; Refresh reloads them.
 - [ ] Interface classification/allowed authorities use a startup snapshot; hotplug refresh remains future work.
 - [ ] Validate separate-device LAN flows and native Windows/macOS Phase 03 runtime behavior.
-- [ ] Token sessions and granular permissions are Phase 05; Phase 03 defaults to local-only and requires explicit Open LAN for remote access.
+- Phase 05 token sessions, granular remote permissions and host-only settings are implemented; see `docs/SESSIONS.md`.
 
 ## Browser
 
@@ -45,4 +45,10 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 - [ ] Validate native Windows/macOS upload publication and cancellation at runtime.
 - [ ] Add crash-recovery scavenging for hidden partial files after abrupt process death.
 - [ ] Run 1 GiB and multi-device transfer stress tests for release acceptance.
-- Host upload limits currently apply at startup; protected runtime settings are Phase 05.
+- Runtime upload limits now update through host-only settings when the transfer queue is idle.
+
+## Sessions and QR
+
+- [ ] Validate physical-device QR scanning and private LAN/VPN routing across supported hosts.
+- [ ] Validate native Windows/macOS settings replacement and cookie/browser flows at runtime.
+- [ ] Verify clipboard copy and join redirects in Firefox/Safari; Chromium desktop/mobile is locally covered.

@@ -2,9 +2,10 @@ openapi: 3.1.0
 info:
   title: SplitShare API
   version: 0.1.0
-  description: Phases 03–04 implemented contract. Local-only by default; remote access
-    requires explicit Open LAN. Token sessions, previews and runtime settings remain
-    planned.
+  description: Phases 03–05 implemented contract. Trusted local/private networks only.
+    Remote token-mode clients require a session cookie; Open LAN retains capability
+    checks. Host control uses actual socket-peer classification. See SESSIONS.md.
+    Preview is not implemented.
 servers:
 - url: /
 paths:
@@ -19,6 +20,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Status'
         '403':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
   /api/v1/files:
     get:
@@ -50,6 +53,8 @@ paths:
           $ref: '#/components/responses/Error'
         '503':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
     delete:
       summary: Permanently delete a file or empty directory
       parameters:
@@ -80,6 +85,8 @@ paths:
         '413':
           $ref: '#/components/responses/Error'
         '503':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
   /api/v1/directories:
     post:
@@ -124,6 +131,8 @@ paths:
           $ref: '#/components/responses/Error'
         '503':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
   /api/v1/files/rename:
     post:
       summary: Rename or move without overwriting
@@ -158,6 +167,8 @@ paths:
         '413':
           $ref: '#/components/responses/Error'
         '503':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
   /api/v1/files/download:
     parameters:
@@ -208,6 +219,8 @@ paths:
           $ref: '#/components/responses/Error'
         '503':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
     head:
       summary: File response headers without body; Range is ignored
       responses:
@@ -223,13 +236,17 @@ paths:
           $ref: '#/components/responses/Error'
         '503':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
   /api/v1/events:
     get:
       summary: Bounded SSE stream for application-originated mutations
       description: filesystem.resync and transfer.resync on connection/reconnection
         or lag require snapshot reloads. filesystem.changed contains paths; transfer.created/transfer.updated
         contain Transfer objects. No replay IDs or native filesystem watcher. Keepalive
-        every 15 seconds.
+        every 15 seconds. Remote payloads require browse/upload capabilities respectively.
+        session.permissions_changed carries {} and closes the stream on policy change,
+        revocation or expiry; refresh status and reconnect.
       responses:
         '200':
           description: SSE stream
@@ -242,6 +259,8 @@ paths:
         '429':
           $ref: '#/components/responses/Error'
         '503':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
   /api/v1/uploads:
     post:
@@ -297,6 +316,8 @@ paths:
           $ref: '#/components/responses/Error'
         '503':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
   /api/v1/transfers:
     get:
       summary: Read bounded server-authoritative transfer history
@@ -313,6 +334,8 @@ paths:
         '403':
           $ref: '#/components/responses/Error'
         '503':
+          $ref: '#/components/responses/Error'
+        '401':
           $ref: '#/components/responses/Error'
   /api/v1/transfers/{id}:
     delete:
@@ -338,6 +361,125 @@ paths:
         '409':
           $ref: '#/components/responses/Error'
         '503':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+  /j/{token}:
+    get:
+      summary: Exchange share token for a same-origin session cookie
+      security: []
+      parameters:
+      - in: path
+        name: token
+        required: true
+        schema:
+          type: string
+        description: 256-bit lowercase hex share token from a host-selected join URL.
+      responses:
+        '303':
+          description: Joined; no-store and no-referrer
+          headers:
+            Location:
+              schema:
+                type: string
+                const: /
+            Set-Cookie:
+              schema:
+                type: string
+              description: splitshare_session=<ID>; HttpOnly; SameSite=Strict; Path=/;
+                Max-Age=43200
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/session/leave:
+    post:
+      summary: Revoke caller session and expire cookie, including stale cookies
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/MutationHeader'
+      responses:
+        '204':
+          description: Session revoked; Set-Cookie expires splitshare_session
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/host/settings:
+    get:
+      summary: Read host settings (local socket peer only)
+      responses:
+        '200':
+          description: Current effective settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostSettings'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      summary: Persist and apply complete host settings (local socket peer only)
+      description: Remote permissions do not restrict the host. Concurrency changes
+        require idle transfers. Failed persistence leaves active policy unchanged.
+        Access-mode changes revoke remote sessions; other settings changes invalidate
+        remote streams but preserve cookies.
+      parameters:
+      - $ref: '#/components/parameters/MutationHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HostSettings'
+      responses:
+        '200':
+          description: Saved settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostSettings'
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '415':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+  /api/v1/host/network:
+    get:
+      summary: List selectable IPv4 join URLs (local socket peer only)
+      responses:
+        '200':
+          description: Ranked compatible candidates; host chooses a reachable address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkCandidates'
+        '403':
+          $ref: '#/components/responses/Error'
+  /api/v1/host/share-token/rotate:
+    post:
+      summary: Rotate token and revoke existing remote sessions (local socket peer
+        only)
+      parameters:
+      - $ref: '#/components/parameters/MutationHeader'
+      responses:
+        '204':
+          description: Old token and cookies invalidated; fetch new host network URLs
+        '403':
+          $ref: '#/components/responses/Error'
+        '500':
           $ref: '#/components/responses/Error'
 components:
   parameters:
@@ -427,7 +569,7 @@ components:
         share_mode:
           type: string
           enum:
-          - local_only
+          - token_link
           - open_lan
         upload_concurrency:
           type: integer
@@ -435,27 +577,7 @@ components:
           maximum: 32
           description: Effective backend-enforced upload limit
         permissions:
-          type: object
-          required:
-          - browse
-          - download
-          - upload
-          - create_directory
-          - rename
-          - delete
-          properties:
-            browse:
-              type: boolean
-            download:
-              type: boolean
-            upload:
-              type: boolean
-            create_directory:
-              type: boolean
-            rename:
-              type: boolean
-            delete:
-              type: boolean
+          $ref: '#/components/schemas/PermissionSet'
     FileEntry:
       type: object
       required:
@@ -543,3 +665,92 @@ components:
         updated_unix_ms:
           type: integer
           minimum: 0
+    PermissionSet:
+      type: object
+      required:
+      - browse
+      - download
+      - upload
+      - create_directory
+      - rename
+      - delete
+      properties:
+        browse:
+          type: boolean
+        download:
+          type: boolean
+        upload:
+          type: boolean
+        create_directory:
+          type: boolean
+        rename:
+          type: boolean
+        delete:
+          type: boolean
+      additionalProperties: false
+    HostSettings:
+      type: object
+      additionalProperties: false
+      required:
+      - share_mode
+      - permissions
+      - parallel_uploads_enabled
+      - max_parallel_uploads
+      properties:
+        share_mode:
+          type: string
+          enum:
+          - token_link
+          - open_lan
+        permissions:
+          $ref: '#/components/schemas/PermissionSet'
+        parallel_uploads_enabled:
+          type: boolean
+        max_parallel_uploads:
+          type: integer
+          minimum: 1
+          maximum: 32
+    NetworkCandidates:
+      type: object
+      required:
+      - candidates
+      properties:
+        candidates:
+          type: array
+          items:
+            type: object
+            required:
+            - interface
+            - address
+            - kind
+            - url
+            properties:
+              interface:
+                type: string
+              address:
+                type: string
+                format: ipv4
+              kind:
+                type: string
+                enum:
+                - private
+                - vpn
+                - link_local
+                - other
+                - virtual
+                - loopback
+              url:
+                type: string
+                format: uri
+                description: Listener-compatible HTTP join URL; token mode includes
+                  /j/<token>, Open LAN uses /.
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: splitshare_session
+      description: Opaque 256-bit ID from /j/{token}; HttpOnly, SameSite=Strict, Path=/;
+        12-hour server expiry.
+security:
+- SessionCookie: []
+- {}

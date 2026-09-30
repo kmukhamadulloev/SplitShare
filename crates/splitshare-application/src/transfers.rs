@@ -44,7 +44,7 @@ struct Inner {
     events: broadcast::Sender<TransferEvent>,
     shutdown: CancellationToken,
     files: FileService,
-    limit: usize,
+    limit: std::sync::atomic::AtomicUsize,
 }
 #[derive(Clone)]
 pub struct TransferManager(Arc<Inner>);
@@ -109,11 +109,42 @@ impl TransferManager {
             events,
             shutdown,
             files,
-            limit,
+            limit: std::sync::atomic::AtomicUsize::new(limit),
         })))
     }
     pub fn limit(&self) -> usize {
-        self.0.limit
+        self.0.limit.load(std::sync::atomic::Ordering::Relaxed)
+    }
+    /// Change limits only while idle; registration is excluded through persistence.
+    pub fn configure_limit(
+        &self,
+        limit: usize,
+        persist: impl FnOnce() -> Result<(), crate::sessions::AccessError>,
+    ) -> Result<(), crate::sessions::AccessError> {
+        if !(1..=32).contains(&limit) {
+            return Err(crate::sessions::AccessError::Invalid);
+        }
+        let records = self.0.records.lock().unwrap();
+        let old = self.limit();
+        if old != limit
+            && (records
+                .values()
+                .any(|record| !record.transfer.state.terminal())
+                || self.0.slots.available_permits() != old)
+        {
+            return Err(crate::sessions::AccessError::Busy);
+        }
+        persist()?;
+        if limit > old {
+            self.0.slots.add_permits(limit - old);
+        }
+        if limit < old {
+            self.0.slots.forget_permits(old - limit);
+        }
+        self.0
+            .limit
+            .store(limit, std::sync::atomic::Ordering::Relaxed);
+        Ok(())
     }
     pub fn subscribe(&self) -> broadcast::Receiver<TransferEvent> {
         self.0.events.subscribe()

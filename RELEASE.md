@@ -11,8 +11,10 @@ No public release has been produced from this scaffold.
   peer classification, explicit Open LAN startup and a real Vue/Pinia browser.
 - Phase 04: bounded streaming uploads, backend concurrency, truthful SSE progress,
   cancellation/retry, conflict resolution and file/image/text clipboard workflows.
+- Phase 05: cryptographic join links, expiring HttpOnly sessions, rotation/revocation,
+  remote capabilities, persisted host settings and selectable locally generated QR.
 - Local Linux tests pass; native Windows/macOS runtime verification is pending.
-  Token sessions, granular permissions and native tray remain later phases.
+  Production WebUI refinement, native tray and release packaging remain later phases.
 
 ## Planned
 

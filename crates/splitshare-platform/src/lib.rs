@@ -97,3 +97,40 @@ mod tests {
         }
     }
 }
+
+/// Atomically replace versioned configuration; no host path is returned to clients.
+pub fn save(path: &Path, settings: &HostSettings) -> Result<(), ConfigError> {
+    settings.validate().map_err(|_| ConfigError::Invalid)?;
+    let parent = path.parent().ok_or(ConfigError::Invalid)?;
+    fs::create_dir_all(parent)?;
+    let mut temporary = tempfile::NamedTempFile::new_in(parent)?;
+    let bytes = serde_json::to_vec_pretty(&serde_json::json!({"version": 1, "settings": settings}))
+        .map_err(|_| ConfigError::Invalid)?;
+    temporary.write_all(&bytes)?;
+    temporary.as_file().sync_all()?;
+    temporary
+        .persist(path)
+        .map_err(|error| ConfigError::Io(error.error))?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod persistence_tests {
+    use super::*;
+    #[test]
+    fn migrates_legacy_permissions_and_atomically_saves_settings() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("config.json");
+        fs::write(&path, br#"{"version":1,"settings":{"share_mode":"token_link","parallel_uploads_enabled":false,"max_parallel_uploads":3}}"#).unwrap();
+        let mut settings = load_or_create(&path).unwrap();
+        assert!(!settings.permissions.delete);
+        settings.permissions.upload = false;
+        settings.share_mode = splitshare_core::ShareMode::OpenLan;
+        save(&path, &settings).unwrap();
+        assert_eq!(load_or_create(&path).unwrap(), settings);
+        settings.max_parallel_uploads = 0;
+        assert!(save(&path, &settings).is_err());
+        assert_ne!(load_or_create(&path).unwrap(), settings);
+        assert_eq!(fs::read_dir(root.path()).unwrap().count(), 1);
+    }
+}

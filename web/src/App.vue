@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { Folder, File, Download, LayoutGrid, List, FolderPlus, RefreshCw, ChevronRight, ArrowUp, Search, MoreHorizontal, Pencil, Trash2, X } from '@lucide/vue'
+import Sharing from './components/Sharing.vue'
 import Transfers from './components/Transfers.vue'
 import { useFiles } from './app/files'
 import { downloadUrl, type FileEntry } from './app/api'
@@ -53,7 +54,7 @@ onUnmounted(() => { files.stop(); window.removeEventListener('keydown', dismiss)
   <main class="manager" @click="menu = undefined" @dragover.prevent @drop.prevent="transfers?.drop($event)">
     <header class="topbar">
       <img src="/logo.png" alt="SplitShare" class="logo" />
-      <div><h1>SplitShare</h1><p>{{ files.status?.share_mode === 'open_lan' ? 'Open LAN · Trusted private network' : 'Local access' }}</p></div>
+      <div><h1>SplitShare</h1><p>{{ files.status?.share_mode === 'open_lan' ? 'Open LAN · Trusted private network' : 'Private link · Trusted private network' }}</p></div>
       <span class="connection" :class="{ online: files.connected }">{{ files.connected ? 'Connected' : 'Offline' }}</span>
     </header>
     <nav class="breadcrumbs" aria-label="Breadcrumb">
@@ -65,6 +66,7 @@ onUnmounted(() => { files.stop(); window.removeEventListener('keydown', dismiss)
       <button class="button primary" :disabled="!files.status?.permissions.create_directory" @click="open('create')"><FolderPlus :size="18" /><span class="desktop-label">New folder</span><span class="sr-only">Create folder</span></button>
       <button class="icon-btn" aria-label="Refresh files" :disabled="!files.status?.sharing || files.loading" @click="files.load()"><RefreshCw :size="18" /></button>
       <Transfers ref="transfers" :path="files.path" :enabled="!!files.status?.permissions.upload" :concurrency="files.status?.upload_concurrency ?? 1" />
+      <Sharing />
       <div class="view-switch"><button class="icon-btn" aria-label="List view" :aria-pressed="!grid" @click="grid = false"><List :size="18" /></button><button class="icon-btn" aria-label="Grid view" :aria-pressed="grid" @click="grid = true"><LayoutGrid :size="18" /></button></div>
     </section>
     <p v-if="files.error" class="error" role="alert">{{ files.error }}</p>
@@ -76,7 +78,7 @@ onUnmounted(() => { files.stop(); window.removeEventListener('keydown', dismiss)
           <component :is="entry.kind === 'directory' ? Folder : File" :size="grid ? 36 : 24" class="file-icon" />
           <div class="file-detail"><button v-if="entry.kind === 'directory'" class="file-name" @click="files.load(entry.path)">{{ entry.name }}</button><span v-else class="file-name">{{ entry.name }}</span><small>{{ size(entry.size) }}</small></div>
           <time class="modified">{{ entry.modified_unix_seconds ? new Date(entry.modified_unix_seconds * 1000).toLocaleDateString() : '—' }}</time>
-          <a v-if="entry.kind === 'file'" :href="downloadUrl(entry.path)" class="icon-btn" :aria-label="`Download ${entry.name}`"><Download :size="18" /></a>
+          <a v-if="entry.kind === 'file' && files.status?.permissions.download" :href="downloadUrl(entry.path)" class="icon-btn" :aria-label="`Download ${entry.name}`"><Download :size="18" /></a>
           <button class="icon-btn" :aria-label="`Actions for ${entry.name}`" @click.stop="context($event,entry)"><MoreHorizontal :size="18" /></button>
         </article>
       </div>
@@ -84,8 +86,8 @@ onUnmounted(() => { files.stop(); window.removeEventListener('keydown', dismiss)
     <footer>{{ files.entries.length }} items <span>{{ files.status?.root_label ?? 'Shared folder' }}</span></footer>
     <div v-if="menu" class="context-menu" role="group" aria-label="Item actions" :style="{ left: `${menu.x}px`, top: `${menu.y}px` }" @click.stop>
       <strong>{{ menu.entry.name }}</strong>
-      <button @click="open('rename',menu.entry)"><Pencil :size="17" />Rename</button>
-      <button class="danger-text" @click="open('delete',menu.entry)"><Trash2 :size="17" />Delete</button>
+      <button :disabled="!files.status?.permissions.rename" @click="open('rename',menu.entry)"><Pencil :size="17" />Rename</button>
+      <button class="danger-text" :disabled="!files.status?.permissions.delete" @click="open('delete',menu.entry)"><Trash2 :size="17" />Delete</button>
       <button @click="menu = undefined"><X :size="17" />Close</button>
     </div>
     <dialog ref="dialog" @cancel.prevent="close()" @click="($event.target === dialog) && close()">

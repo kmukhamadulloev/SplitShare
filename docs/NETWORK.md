@@ -75,3 +75,12 @@ Do not advertise broken/unreachable IPv6 URLs.
 SplitShare v1 is not an internet-facing server product.
 
 Do not add UPnP port forwarding, public tunnels or remote relay as incidental features.
+
+## Implemented Phase 05 selection
+
+The network service returns all listener-compatible IPv4 candidates with adapter
+name, address, classification and share URL through a host-only endpoint. The UI
+allows explicit selection and locally generates a QR code. Name-based VPN/virtual
+ranking is a heuristic; physical reachability is not inferred. Loopback remains
+available with a host-only notice. Interface enumeration is a startup snapshot.
+See [SESSIONS.md](SESSIONS.md).

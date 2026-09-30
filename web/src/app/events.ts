@@ -8,7 +8,7 @@ export function observeEvents(event: (event: MessageEvent) => void, connection: 
     source = new EventSource('/api/v1/events')
     source.onopen = () => { online = true; connections.forEach(listener => listener(true)) }
     source.onerror = () => { online = false; connections.forEach(listener => listener(false)) }
-    for (const name of ['filesystem.changed', 'filesystem.resync', 'transfer.created', 'transfer.updated', 'transfer.resync']) source.addEventListener(name, incoming => listeners.forEach(listener => listener(incoming as MessageEvent)))
+    for (const name of ['filesystem.changed', 'filesystem.resync', 'transfer.created', 'transfer.updated', 'transfer.resync', 'session.permissions_changed']) source.addEventListener(name, incoming => listeners.forEach(listener => listener(incoming as MessageEvent)))
   }
   return () => {
     listeners.delete(event); connections.delete(connection)

@@ -6,6 +6,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use rust_embed::RustEmbed;
+mod access;
 mod api;
 mod error;
 mod range;
@@ -88,6 +89,14 @@ pub fn api_router(state: ServerState) -> Router {
         routing::{get, post},
     };
     Router::new()
+        .route("/j/{token}", get(access::join))
+        .route("/api/v1/session/leave", post(access::leave))
+        .route(
+            "/api/v1/host/settings",
+            get(access::settings).put(access::update),
+        )
+        .route("/api/v1/host/network", get(access::network))
+        .route("/api/v1/host/share-token/rotate", post(access::rotate))
         .route("/api/v1/status", get(api::status))
         .route("/api/v1/files", get(api::list).delete(api::delete))
         .route("/api/v1/directories", post(api::mkdir))

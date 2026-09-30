@@ -187,7 +187,8 @@ Playwright runs desktop Chromium and a mobile Pixel viewport against the embedde
 production Vue build. Its Node helper is test-only; the server remains Rust.
 CI installs Chromium prerequisites and runs this on Linux. Release smoke remains
 `bash scripts/build-release.sh && python3 scripts/smoke-foundation.py` and now
-verifies that unconfigured file endpoints return 503 while join routes remain 404.
+verifies that unconfigured file endpoints return 503. Phase 05 also returns 503
+for joins when no share is configured (the pre-session foundation used 404).
 
 ## Phase 04 checks
 
@@ -208,3 +209,33 @@ Cross-target compile checks:
 cargo check --locked --workspace --all-targets --target x86_64-pc-windows-msvc
 cargo check --locked --workspace --all-targets --target x86_64-apple-darwin
 ```
+
+## Phase 05 checks
+
+`bash scripts/check.sh` covers 47 Rust tests, frontend aggregation tests,
+typechecking/build, formatting and Clippy. Session tests cover expiry, capacity,
+rotation, permission independence, legacy configuration migration and atomic save
+failure. HTTP adapter tests use injected socket peers for remote classification,
+forged forwarding headers, host-only endpoints, mutation CSRF, GET/HEAD capability
+checks and existing SSE/download/upload revocation.
+
+`npm run test:e2e --prefix web` runs eight tests across desktop/mobile Chromium
+against the native embedded server. Sharing tests select discovered address
+options, decode rendered QR pixels with jsQR, assert no external requests, exercise
+settings and rotation, and check real browser redirect/HttpOnly cookie behavior.
+The fixture binds IPv4 with token mode and an isolated temporary share/config;
+remote authorization is separately tested with synthetic socket peers, not claimed
+as a physical-device test.
+
+After a release build, Linux checks:
+
+```bash
+python3 scripts/smoke-foundation.py
+python3 scripts/smoke-sessions.py
+python3 scripts/test-upload-memory.py
+```
+
+The sessions smoke uses port 43125 and checks persisted permissions/concurrency
+across native process restart, token regeneration, join redirect/cookie headers and
+log/config redaction. Browser tests use port 43123. Native Windows/macOS runtime,
+physical QR scanning, LAN/VPN reachability and Firefox/Safari remain manual gates.

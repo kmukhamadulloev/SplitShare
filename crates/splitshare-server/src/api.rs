@@ -15,7 +15,8 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use splitshare_application::FileService;
-use splitshare_core::{HostSettings, VirtualPath};
+use splitshare_application::sessions::{Access, SessionManager, SettingsStore};
+use splitshare_core::{Capability, HostSettings, PermissionSet, VirtualPath};
 use splitshare_network::LocalAddresses;
 use std::{convert::Infallible, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{
@@ -28,8 +29,9 @@ use tokio_util::sync::CancellationToken;
 pub struct ServerState {
     pub files: Option<FileService>,
     pub transfers: Option<splitshare_application::transfers::TransferManager>,
-    pub settings: HostSettings,
-    pub open_lan: bool,
+    pub sessions: SessionManager,
+    pub settings_store: Option<Arc<dyn SettingsStore>>,
+    pub candidates: Vec<splitshare_network::AddressCandidate>,
     pub local_addresses: LocalAddresses,
     pub authorities: Vec<String>,
     pub dev_origin: Option<String>,
@@ -40,12 +42,17 @@ pub struct ServerState {
 impl ServerState {
     pub fn new(
         files: Option<FileService>,
-        settings: HostSettings,
+        mut settings: HostSettings,
         open_lan: bool,
         local_addresses: LocalAddresses,
         authorities: Vec<String>,
         shutdown: CancellationToken,
     ) -> Self {
+        if open_lan {
+            settings.share_mode = splitshare_core::ShareMode::OpenLan;
+        }
+        let sessions =
+            SessionManager::new(settings.clone()).expect("Secure random source required");
         let transfers = files.clone().map(|files| {
             splitshare_application::transfers::TransferManager::new(
                 files,
@@ -57,8 +64,9 @@ impl ServerState {
         Self {
             files,
             transfers,
-            settings,
-            open_lan,
+            sessions,
+            settings_store: None,
+            candidates: vec![],
             local_addresses,
             authorities,
             dev_origin: None,
@@ -78,7 +86,11 @@ impl ServerState {
     }
 }
 
-pub async fn guard(State(state): State<ServerState>, request: Request, next: Next) -> Response {
+async fn guard_inner(
+    State(state): State<ServerState>,
+    mut request: Request,
+    next: Next,
+) -> Response {
     let denied = || {
         ApiError::new(
             StatusCode::FORBIDDEN,
@@ -111,13 +123,37 @@ pub async fn guard(State(state): State<ServerState>, request: Request, next: Nex
         let Some(peer) = request.extensions().get::<ConnectInfo<SocketAddr>>() else {
             return denied();
         };
-        if !state.open_lan && !state.local_addresses.is_local(peer.0.ip()) {
+        let local = state.local_addresses.is_local(peer.0.ip());
+        let path = request.uri().path();
+        if path.starts_with("/api/v1/host/") && !local {
             return ApiError::new(
                 StatusCode::FORBIDDEN,
-                "LOCAL_ONLY",
-                "Remote access is disabled by the host.",
+                "HOST_CLIENT_REQUIRED",
+                "Only the host can change or read host configuration.",
             )
             .into_response();
+        }
+        let capability = match (request.method(), path) {
+            (&Method::GET | &Method::HEAD, "/api/v1/files") => Some(Capability::Browse),
+            (&Method::GET | &Method::HEAD, "/api/v1/files/download") => Some(Capability::Download),
+            (&Method::POST, "/api/v1/uploads") => Some(Capability::Upload),
+            (&Method::POST, "/api/v1/directories") => Some(Capability::CreateDirectory),
+            (&Method::POST, "/api/v1/files/rename") => Some(Capability::Rename),
+            (&Method::DELETE, "/api/v1/files") => Some(Capability::Delete),
+            (&Method::GET | &Method::HEAD, "/api/v1/transfers") => Some(Capability::Upload),
+            _ => None,
+        };
+        // Leaving remains possible after expiry or revocation.
+        if path != "/api/v1/session/leave" {
+            let access = match state.sessions.authorize(
+                local,
+                crate::access::cookie(request.headers()),
+                capability,
+            ) {
+                Ok(access) => access,
+                Err(error) => return ApiError::from(error).into_response(),
+            };
+            request.extensions_mut().insert(access);
         }
         if !matches!(
             *request.method(),
@@ -131,7 +167,10 @@ pub async fn guard(State(state): State<ServerState>, request: Request, next: Nex
             return denied();
         }
     }
-    let mut response = next.run(request).await;
+    next.run(request).await
+}
+pub async fn guard(state: State<ServerState>, request: Request, next: Next) -> Response {
+    let mut response = guard_inner(state, request, next).await;
     response
         .headers_mut()
         .insert(header::X_CONTENT_TYPE_OPTIONS, "nosniff".parse().unwrap());
@@ -145,15 +184,6 @@ pub async fn guard(State(state): State<ServerState>, request: Request, next: Nex
 }
 
 #[derive(Serialize)]
-pub struct Permissions {
-    browse: bool,
-    download: bool,
-    upload: bool,
-    create_directory: bool,
-    rename: bool,
-    delete: bool,
-}
-#[derive(Serialize)]
 pub struct Status {
     version: &'static str,
     sharing: bool,
@@ -161,7 +191,7 @@ pub struct Status {
     local_client: bool,
     share_mode: &'static str,
     upload_concurrency: usize,
-    permissions: Permissions,
+    permissions: PermissionSet,
 }
 pub async fn status(
     State(state): State<ServerState>,
@@ -173,19 +203,21 @@ pub async fn status(
         sharing,
         root_label: "Shared folder",
         local_client: state.local_addresses.is_local(peer.ip()),
-        share_mode: if state.open_lan {
-            "open_lan"
-        } else {
-            "local_only"
+        share_mode: match state.sessions.settings().share_mode {
+            splitshare_core::ShareMode::OpenLan => "open_lan",
+            _ => "token_link",
         },
-        upload_concurrency: state.settings.effective_upload_limit().unwrap_or(1),
-        permissions: Permissions {
-            browse: sharing,
-            download: sharing,
-            upload: sharing,
-            create_directory: sharing,
-            rename: sharing,
-            delete: sharing,
+        upload_concurrency: state
+            .sessions
+            .settings()
+            .effective_upload_limit()
+            .unwrap_or(1),
+        permissions: if sharing {
+            state
+                .sessions
+                .permissions(state.local_addresses.is_local(peer.ip()))
+        } else {
+            PermissionSet::all(false)
         },
     })
 }
@@ -259,6 +291,7 @@ pub async fn delete(
 }
 
 pub async fn download(
+    axum::Extension(access): axum::Extension<Access>,
     State(state): State<ServerState>,
     method: Method,
     headers: HeaderMap,
@@ -318,7 +351,7 @@ pub async fn download(
             let mut remaining = length;
             while remaining > 0 {
                 let mut bytes = vec![0; remaining.min(64 * 1024) as usize];
-                let count = tokio::select! { _ = shutdown.cancelled() => break, count = file.read(&mut bytes) => count };
+                let count = tokio::select! { biased; _ = shutdown.cancelled() => break, _ = access.invalidated() => break, count = file.read(&mut bytes) => count };
                 let count = match count { Ok(count) => count, Err(error) => { yield Err(error); break; } };
                 if count == 0 { yield Err(std::io::Error::from(std::io::ErrorKind::UnexpectedEof)); break; }
                 remaining -= count as u64;
@@ -355,7 +388,10 @@ pub async fn download(
     Ok(response)
 }
 
-pub async fn events(State(state): State<ServerState>) -> Result<Response, ApiError> {
+pub async fn events(
+    State(state): State<ServerState>,
+    axum::Extension(access): axum::Extension<Access>,
+) -> Result<Response, ApiError> {
     let mut receiver = state.service()?.subscribe();
     let mut transfers = state
         .transfers
@@ -376,10 +412,12 @@ pub async fn events(State(state): State<ServerState>) -> Result<Response, ApiErr
         yield Ok(Event::default().event("transfer.resync").data("{}"));
         loop {
             let event = tokio::select! {
+                biased;
                 _ = shutdown.cancelled() => break,
+                _ = access.invalidated() => { yield Ok(Event::default().event("session.permissions_changed").data("{}")); break; },
                 event = transfers.recv() => {
                     match event {
-                        Ok(event) => yield Ok(Event::default().event(event.name).json_data(event.transfer).expect("serializable transfer")),
+                        Ok(event) => if state.sessions.permissions(access.local).upload { yield Ok(Event::default().event(event.name).json_data(event.transfer).expect("serializable transfer")); },
                         Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => yield Ok(Event::default().event("transfer.resync").data("{}")),
                         Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                     }
@@ -388,7 +426,7 @@ pub async fn events(State(state): State<ServerState>) -> Result<Response, ApiErr
                 event = receiver.recv() => event,
             };
             match event {
-                Ok(event) => yield Ok(Event::default().event("filesystem.changed").json_data(event).expect("serializable virtual path event")),
+                Ok(event) => if state.sessions.permissions(access.local).browse { yield Ok(Event::default().event("filesystem.changed").json_data(event).expect("serializable virtual path event")); },
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => yield Ok(Event::default().event("filesystem.resync").data("{}")),
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
             }

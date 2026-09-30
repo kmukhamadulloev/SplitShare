@@ -105,3 +105,10 @@ Mandatory before v1:
 - concurrency-limit bypass attempt;
 - malformed Range tests;
 - absolute-path redaction tests.
+
+## Implemented Phase 05 policy
+
+See [SESSIONS.md](SESSIONS.md) for 256-bit token/cookie generation, 12-hour expiry,
+256-session capacity, rotation invalidation, default remote permissions and
+socket-derived host authorization. Token mode is active for remote API access;
+Open LAN retains capability enforcement. Local host control is intentionally full.

@@ -1,9 +1,9 @@
 # HTTP API
 
-Phases 03–04 implement status, directory listing/create/rename/delete, streamed
-downloads with Range, uploads, transfer snapshots/cancellation and SSE. Previews,
-sessions and host settings endpoints below remain planned. The exact implemented schemas and response statuses are in
-[openapi.yaml](openapi.yaml). Startup/access policy: [HTTP_BROWSER.md](HTTP_BROWSER.md).
+Phases 03–05 implement file operations, streaming transfers, SSE, token sessions,
+remote permissions, host settings and network candidates. Preview remains planned.
+Exact schemas are in [openapi.yaml](openapi.yaml). See [SESSIONS.md](SESSIONS.md)
+for authorization, expiry, revocation and persistence policy.
 
 Implemented mutation bodies:
 
@@ -13,7 +13,7 @@ Implemented mutation bodies:
 
 All mutations require `X-SplitShare-Request: 1`. File metadata mutations use JSON;
 uploads use a raw file body and cancellation has no body. Invalid/oversized bodies
-return safe typed errors. Unknown endpoints return JSON 404, never SPA HTML.
+return safe typed errors. Unknown endpoints return JSON 404 after authorization, never SPA HTML.
 
 Base:
 
@@ -96,7 +96,7 @@ GET /api/v1/files/preview?path=/file.ext
 
 Download supports Range.
 
-Preview exists only for allowlisted browser-safe types and may use the same Range-backed file response with stricter content policy.
+Planned preview will allow only browser-safe types and may use the same Range-backed file response with stricter content policy.
 
 No transcoding.
 
@@ -113,7 +113,7 @@ GET /j/{token}
 POST /api/v1/session/leave
 ```
 
-Host-only session management may later include:
+Host-only token rotation (204; revokes old joins and remote sessions):
 
 ```text
 POST /api/v1/host/share-token/rotate
@@ -127,7 +127,20 @@ PUT /api/v1/host/settings
 GET /api/v1/host/network
 ```
 
-Remote clients receive `HOST_CLIENT_REQUIRED`.
+Remote clients receive 403 `HOST_CLIENT_REQUIRED`, including for GET. PUT accepts
+all HostSettings fields: share_mode (`token_link`/`open_lan`), permissions (six
+booleans), parallel_uploads_enabled and max_parallel_uploads (1–32). Returns the
+persisted settings, or 409 while transfers prevent a concurrency change.
+
+Network response: `{ "candidates": [{ "interface": "eth0", "address": "192.168.1.20",
+"kind": "private", "url": "http://192.168.1.20:8080/j/<opaque-token>" }] }`.
+Only compatible IPv4 candidates are returned. Select a candidate; do not assume
+the first interface is reachable by the intended client.
+
+A valid join returns 303, same-origin HttpOnly/SameSite=Strict cookie, and Location
+`/`. Invalid token returns 401; sessions expire after 12 hours or rotation/restart.
+Leave is a marked POST returning 204 and an expired cookie. Remote API requests
+require the cookie in token mode and appropriate capabilities in either mode.
 
 ## Realtime
 
@@ -142,9 +155,11 @@ SSE event names:
 - `transfer.updated`
 - `filesystem.resync`
 - `transfer.resync`
+- `session.permissions_changed`
 
 Resync events require fetching the corresponding snapshot. Transfer created/updated
-payloads are Transfer objects. Session events remain planned.
+payloads are Transfer objects. Session change events contain `{}`; refresh status.
+Remote streams close on policy changes and reconnect under current authorization.
 
 Event payloads are typed JSON.
 

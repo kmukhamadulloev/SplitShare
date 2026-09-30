@@ -11,11 +11,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .init();
     let options = options()?;
-    let mut settings = splitshare_platform::load_or_create(&splitshare_platform::config_path()?)?;
+    let config_path = splitshare_platform::config_path()?;
+    let mut settings = splitshare_platform::load_or_create(&config_path)?;
     if let Some(limit) = options.parallel {
         settings.parallel_uploads_enabled = limit > 1;
         settings.max_parallel_uploads = limit;
         settings.validate()?;
+    }
+    if options.open_lan {
+        settings.share_mode = splitshare_core::ShareMode::OpenLan;
     }
     let storage = options
         .root
@@ -26,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addresses = splitshare_network::LocalAddresses::discover()?;
     let listener = tokio::net::TcpListener::bind(options.bind).await?;
     let address = listener.local_addr()?;
-    tracing::info!(%address, sharing = files.is_some(), open_lan = options.open_lan, "SplitShare started");
+    tracing::info!(%address, sharing = files.is_some(), share_mode = ?settings.share_mode, "SplitShare started");
     let shutdown = CancellationToken::new();
     let mut authorities = addresses.authorities(address.port());
     if !address.ip().is_unspecified() {
@@ -40,6 +44,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         authorities,
         shutdown.clone(),
     );
+    state.candidates = addresses.candidates(address);
+    state.settings_store = Some(std::sync::Arc::new(ConfigStore(config_path)));
     if options.dev {
         state.dev_origin = Some("http://127.0.0.1:5173".into());
     }
@@ -111,18 +117,28 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             Some("--dev") => result.dev = true,
             Some("--help") => {
                 println!(
-                    "splitshare [--root DIRECTORY] [--bind IPv4:PORT] [--open-lan] [--parallel-uploads 1-32 | --serial-uploads] [--dev]\nLAN binding requires --open-lan. Use only trusted local/private networks."
+                    "splitshare [--root DIRECTORY] [--bind IPv4:PORT] [--open-lan] [--parallel-uploads 1-32 | --serial-uploads] [--dev]\nLAN binding uses token links by default. --open-lan disables the token requirement. Use only trusted local/private networks."
                 );
                 std::process::exit(0);
             }
             _ => return Err("Unknown argument; use --help".into()),
         }
     }
-    if !result.bind.ip().is_loopback() && !result.open_lan {
-        return Err("Non-loopback binding requires explicit --open-lan".into());
-    }
     if result.dev && !result.bind.ip().is_loopback() {
         return Err("Development origin is allowed only for loopback binding".into());
     }
     Ok(result)
+}
+
+struct ConfigStore(std::path::PathBuf);
+impl splitshare_application::sessions::SettingsStore for ConfigStore {
+    fn save(
+        &self,
+        settings: &splitshare_core::HostSettings,
+    ) -> Result<(), splitshare_application::sessions::AccessError> {
+        splitshare_platform::save(&self.0, settings).map_err(|_| {
+            tracing::error!("Unable to persist host settings");
+            splitshare_application::sessions::AccessError::Save
+        })
+    }
 }

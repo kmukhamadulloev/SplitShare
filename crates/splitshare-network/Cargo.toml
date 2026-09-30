@@ -8,3 +8,4 @@ description = "Local interface detection, URL selection and network policy."
 
 [dependencies]
 if-addrs.workspace = true
+serde.workspace = true

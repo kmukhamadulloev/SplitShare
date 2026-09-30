@@ -8,6 +8,7 @@ function token() { return [...crypto.getRandomValues(new Uint8Array(16))].map(va
 export const useUploads = defineStore('uploads', () => {
   const items = ref<QueueItem[]>([])
   const limit = ref(1)
+  const enabled = ref(false)
   const problem = ref('')
   const progress = computed(() => aggregate(items.value))
   const speed = computed(() => items.value.filter(item => item.state === 'uploading').reduce((sum,item) => sum + (item.speed ?? 0),0))
@@ -37,11 +38,13 @@ export const useUploads = defineStore('uploads', () => {
   }
   function stop() { stopEvents?.(); stopEvents = undefined; for (const item of items.value) item.controller?.abort() }
   function enqueue(files: File[], parent: string) {
+    if (!enabled.value) return
     if (items.value.length + files.length > 128) { problem.value = 'The queue holds up to 128 files. Clear finished items first.'; return }
     for (const file of files) items.value.push({ id: token(), key: token(), file: markRaw(file), path: `${parent === '/' ? '' : parent}/${file.name}`, state: 'queued', transferred: 0, total: file.size, speed: null, failure: null, policy: 'ask', sent: false })
     pump()
   }
   function pump() {
+    if (!enabled.value) return
     while (inflight < Math.min(limit.value, 6)) {
       const item = items.value.find(item => item.state === 'queued' && !item.sent)
       if (!item) break
@@ -77,6 +80,11 @@ export const useUploads = defineStore('uploads', () => {
     item.id = token(); item.key = token(); item.transferred = 0; item.failure = null; item.speed = null; item.state = 'queued'; item.policy = policy; item.sent = false
     pump()
   }
+  function setEnabled(value: boolean) {
+    enabled.value = value
+    if (!value) { for (const item of items.value) { if (!item.sent && item.state === 'queued') item.state = 'cancelled' } }
+    else pump()
+  }
   function clear() { items.value = items.value.filter(item => !['completed','failed','cancelled'].includes(item.state) || item.controller) }
-  return { items, progress, speed, eta, limit, problem, start, stop, enqueue, cancel, retry, clear }
+  return { items, progress, speed, eta, limit, problem, start, stop, setEnabled, enqueue, cancel, retry, clear }
 })

@@ -71,6 +71,7 @@ impl From<TransferError> for ApiError {
     }
 }
 pub async fn upload(
+    axum::Extension(access): axum::Extension<splitshare_application::sessions::Access>,
     State(state): State<ServerState>,
     query: Result<Query<UploadQuery>, QueryRejection>,
     headers: HeaderMap,
@@ -103,7 +104,12 @@ pub async fn upload(
     let stream = body
         .into_data_stream()
         .map(|result| result.map_err(|_| std::io::Error::from(std::io::ErrorKind::UnexpectedEof)));
-    let transfer = manager(&state)?.upload(request, stream).await?;
+    let manager = manager(&state)?;
+    let transfer = tokio::select! {
+        biased;
+        _ = access.invalidated() => return Err(splitshare_application::sessions::AccessError::Unauthorized.into()),
+        result = manager.upload(request, stream) => result?,
+    };
     Ok((StatusCode::CREATED, Json(transfer)))
 }
 pub async fn list(State(state): State<ServerState>) -> Result<Json<Vec<Transfer>>, ApiError> {

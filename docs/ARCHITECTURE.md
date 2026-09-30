@@ -229,3 +229,9 @@ streaming, SSE, local classification and browser state.
 Phase 04 adds the application TransferManager and raw streaming HTTP uploads,
 transfer snapshots/cancellation and SSE progress. See [TRANSFERS.md](TRANSFERS.md)
 and [API.md](API.md) for the implemented contract and startup host policy.
+
+Phase 05 adds application SessionManager and SettingsStore, core PermissionSet,
+host-only HTTP adapters, native atomic settings persistence and typed IPv4 network
+candidates. Policy is independent of Axum; HTTP maps routes to capabilities and
+passes socket-derived locality. Vue renders bundled QR images and host settings.
+See [SESSIONS.md](SESSIONS.md) for policy and stream invalidation boundaries.

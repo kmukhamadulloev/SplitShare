@@ -14,7 +14,7 @@ The project intentionally follows a release-quality path instead of an MVP path.
 | 02 | Storage sandbox | Implemented; Linux acceptance PASS, native runtime CI pending |
 | 03 | HTTP + file browsing | Implemented; Linux/browser acceptance PASS, native runtime CI pending |
 | 04 | Transfers + clipboard | Implemented; Linux/browser acceptance PASS, native runtime CI pending |
-| 05 | Sessions + permissions + QR | Planned |
+| 05 | Sessions + permissions + QR | Implemented; Linux/browser acceptance PASS, native/device validation pending |
 | 06 | Production WebUI | Planned |
 | 07 | Desktop tray + lifecycle | Planned |
 | 08 | Reliability + security + performance | Planned |

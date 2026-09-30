@@ -1,4 +1,4 @@
-# Phase 03: HTTP and browser foundation
+# HTTP and browser foundation (Phases 03–05)
 
 ## Running
 
@@ -17,12 +17,11 @@ Build with `npm ci --prefix web`, then `bash scripts/build-release.sh`.
 
 No folder is selected automatically. Without `--root`, status reports `sharing:
 false` and storage endpoints return 503 `SHARE_NOT_CONFIGURED`. IPv4 listeners are
-supported; IPv6 advertisement remains a later validation item. Non-loopback binds
-require `--open-lan`. SplitShare is for trusted local/private networks, not public
-internet serving. Open LAN grants currently implemented filesystem operations to
-reachable clients; token links and granular permissions arrive in Phase 05.
-Persisted `token_link` defaults are retained, but not falsely advertised as an
-active session implementation: status reports effective `local_only` or `open_lan`.
+supported; IPv6 advertisement remains a later validation item. Binding to a LAN
+address now supports token links by default. Explicit `--open-lan` disables the
+cookie requirement but retains remote capabilities. Status reports `token_link`
+or `open_lan`. See [SESSIONS.md](SESSIONS.md) for Phase 05 policy and QR selection.
+SplitShare is for trusted local/private networks, not public internet serving.
 
 ## Ownership
 
@@ -39,7 +38,7 @@ already sandboxed file handle to the HTTP adapter for Tokio streaming.
 `splitshare-network` enumerates native interfaces with if-addrs. Socket peers are
 classified using loopback and the interface snapshot obtained at startup, including
 IPv4-mapped loopback. Forwarded/X-Forwarded-For and browser flags are never trusted.
-Interface hotplug refresh/ranking remains later network work.
+Interface candidates are ranked and selectable; hotplug refresh remains future work.
 
 ## Request boundary
 

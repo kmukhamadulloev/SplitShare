@@ -62,3 +62,8 @@ SplitShare/
 Phase 03 adds `crates/splitshare-application` for transport-independent service
 orchestration between HTTP and storage. `web/src/app` contains typed API and Pinia
 state; `web/tests` runs browser workflows against the actual Rust process.
+
+Phase 05 adds `splitshare-application/src/sessions.rs` for session/policy rules,
+`splitshare-server/src/access.rs` for cookie and host configuration adapters,
+`web/src/components/Sharing.vue` for settings/QR, and `docs/SESSIONS.md` for policy.
+The native config adapter persists settings; token/session data remains in memory.

@@ -4,6 +4,7 @@ import { Upload, ClipboardPaste, X, RotateCcw, ListChecks } from '@lucide/vue'
 import { useUploads, type QueueItem } from '../app/uploads'
 const props = defineProps<{ path: string; enabled: boolean; concurrency: number }>()
 const uploads = useUploads()
+watch(() => props.enabled, value => uploads.setEnabled(value), { immediate: true })
 const picker = ref<HTMLInputElement>()
 const queue = ref<HTMLDialogElement>()
 const pasteDialog = ref<HTMLDialogElement>()
