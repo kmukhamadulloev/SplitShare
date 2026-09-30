@@ -239,3 +239,22 @@ The sessions smoke uses port 43125 and checks persisted permissions/concurrency
 across native process restart, token regeneration, join redirect/cookie headers and
 log/config redaction. Browser tests use port 43123. Native Windows/macOS runtime,
 physical QR scanning, LAN/VPN reachability and Firefox/Safari remain manual gates.
+
+## Phase 06 checks
+
+Run `bash scripts/check.sh`, `cargo build --locked -p splitshare`, then
+`npm run test:e2e --prefix web`. The frontend unit command includes byte aggregation
+and metadata-only icon mapping/formatting tests. The 14 browser tests run seven
+workflows each on desktop and Pixel mobile Chromium against the embedded build.
+They cover previous transfer/sharing behavior plus selection, real downloads,
+bulk deletion, keyboard menus, nested focus restoration, Keep existing, focus
+containment, reduced-motion backdrops, horizontal overflow and safe displayed paths.
+Axe checks WCAG 2 A/AA and 2.1 AA rules on list, grid, menus and create/settings
+modals. This automated coverage does not replace manual assistive-technology checks.
+
+Test-only request failures exercise initial recovery; actual browser offline/online
+transitions exercise reconnect, with a real server mutation while disconnected.
+Screenshots of list/grid, menus, transfers, QR and settings are written under the
+ignored `web/test-results/` directory. The viewport test is mobile emulation, not
+physical-device or Safari/Firefox evidence. Release build and foundation/session
+smokes validate the same assets embedded in the standalone Rust executable.

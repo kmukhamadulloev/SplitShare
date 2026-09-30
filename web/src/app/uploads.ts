@@ -76,7 +76,7 @@ export const useUploads = defineStore('uploads', () => {
     } catch { problem.value = 'Cancellation could not be confirmed. Check the connection and retry.' }
   }
   function retry(item: QueueItem, policy: QueueItem['policy'] = item.policy) {
-    if (item.controller || !['failed','cancelled'].includes(item.state)) return
+    if (!enabled.value || item.controller || !['failed','cancelled'].includes(item.state)) return
     item.id = token(); item.key = token(); item.transferred = 0; item.failure = null; item.speed = null; item.state = 'queued'; item.policy = policy; item.sent = false
     pump()
   }
@@ -85,6 +85,7 @@ export const useUploads = defineStore('uploads', () => {
     if (!value) { for (const item of items.value) { if (!item.sent && item.state === 'queued') item.state = 'cancelled' } }
     else pump()
   }
+  function keepExisting(item: QueueItem) { if (item.state === 'failed' && item.failure === 'CONFLICT') { item.state = 'cancelled'; item.failure = null } }
   function clear() { items.value = items.value.filter(item => !['completed','failed','cancelled'].includes(item.state) || item.controller) }
-  return { items, progress, speed, eta, limit, problem, start, stop, setEnabled, enqueue, cancel, retry, clear }
+  return { items, progress, speed, eta, limit, problem, start, stop, setEnabled, enqueue, cancel, retry, keepExisting, clear }
 })

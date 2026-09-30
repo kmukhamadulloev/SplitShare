@@ -13,8 +13,10 @@ No public release has been produced from this scaffold.
   cancellation/retry, conflict resolution and file/image/text clipboard workflows.
 - Phase 05: cryptographic join links, expiring HttpOnly sessions, rotation/revocation,
   remote capabilities, persisted host settings and selectable locally generated QR.
+- Phase 06: production List/Grid file manager, typed icons, selection actions,
+  desktop context menus/mobile sheets, accessible dialogs and SSE reconnect recovery.
 - Local Linux tests pass; native Windows/macOS runtime verification is pending.
-  Production WebUI refinement, native tray and release packaging remain later phases.
+  Native tray, reliability hardening and release packaging remain later phases.
 
 ## Planned
 

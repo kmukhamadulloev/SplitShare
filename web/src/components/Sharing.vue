@@ -4,6 +4,7 @@ import { QrCode, Settings, Copy, RefreshCw, LogOut } from '@lucide/vue'
 import QRCode from 'qrcode'
 import { request, type Permissions } from '../app/api'
 import { useFiles } from '../app/files'
+import { showDialog, closeDialog } from '../app/dialogs'
 interface SettingsModel { share_mode: 'token_link' | 'open_lan'; permissions: Permissions; parallel_uploads_enabled: boolean; max_parallel_uploads: number }
 interface Candidate { interface: string; address: string; kind: string; url: string }
 const files = useFiles()
@@ -20,16 +21,15 @@ const busy = ref(false)
 const urlInput = ref<HTMLInputElement>()
 const selectedCandidate = computed(() => candidates.value.find(candidate => candidate.url === selected.value))
 const permissions: { key: keyof Permissions; label: string }[] = [{key:'browse',label:'Browse'},{key:'download',label:'Download'},{key:'upload',label:'Upload'},{key:'create_directory',label:'Create folders'},{key:'rename',label:'Rename'},{key:'delete',label:'Delete'}]
-let focusBefore: HTMLElement | null = null
-function show(dialog?: HTMLDialogElement) { focusBefore = document.activeElement as HTMLElement; dialog?.showModal() }
-function close(dialog?: HTMLDialogElement) { if (!busy.value) { dialog?.close(); error.value = ''; notice.value = ''; focusBefore?.focus() } }
+const show = showDialog
+function close(dialog?: HTMLDialogElement) { if (!busy.value) { closeDialog(dialog); error.value = ''; notice.value = '' } }
 async function loadNetwork() {
   const previousAddress = selectedCandidate.value?.address
   candidates.value = (await request<{candidates: Candidate[]}>('/host/network')).candidates
   selected.value = candidates.value.find(candidate => candidate.address === previousAddress)?.url ?? candidates.value.find(candidate => candidate.kind !== 'loopback')?.url ?? candidates.value[0]?.url ?? ''
 }
 async function settings() {
-  error.value = ''; notice.value = ''; show(settingsDialog.value); busy.value = true
+  error.value = ''; notice.value = ''; model.value = undefined; show(settingsDialog.value); busy.value = true
   try { model.value = await request<SettingsModel>('/host/settings'); await loadNetwork() } catch (cause) { error.value = (cause as Error).message } finally { busy.value = false }
 }
 async function share() {
@@ -78,7 +78,8 @@ async function leave() { try { await request('/session/leave','POST'); location.
       <h2>Settings</h2><p>SplitShare host configuration</p>
       <div class="settings-layout">
         <nav class="settings-tabs" aria-label="Settings sections"><button v-for="section in ['access','transfers','network','security']" :key="section" type="button" :aria-pressed="tab === section" @click="tab = section">{{ section === 'access' ? 'Access & permissions' : section }}</button></nav>
-        <div v-if="model" class="settings-content">
+        <div v-if="!model" class="settings-content" role="status">{{ busy ? 'Loading settings…' : 'Settings could not be loaded. Close and try again.' }}</div>
+        <div v-else class="settings-content">
           <section v-show="tab === 'access'"><h3>Remote permissions</h3><p>These limits apply to remote clients. The host retains full control.</p><label v-for="permission in permissions" :key="permission.key" class="setting-toggle"><span>{{ permission.label }}</span><input v-model="model.permissions[permission.key]" type="checkbox" :aria-label="permission.label" /></label></section>
           <section v-show="tab === 'transfers'"><h3>Parallel uploads</h3><p>The server enforces this limit. Wait for the queue to finish before changing it.</p><label class="setting-toggle">Allow parallel uploads<input v-model="model.parallel_uploads_enabled" type="checkbox" /></label><label for="parallel-limit">Maximum parallel uploads</label><input id="parallel-limit" v-model.number="model.max_parallel_uploads" type="number" min="1" max="32" required /></section>
           <section v-show="tab === 'network'"><h3>Network addresses</h3><p>Select a reachable address in Share with QR. VPN and virtual adapters remain available.</p><p v-for="candidate in candidates" :key="candidate.url">{{ candidate.interface }} · {{ candidate.address }} · {{ candidate.kind }}</p><p>Listener address and port are chosen at startup.</p></section>

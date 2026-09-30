@@ -155,3 +155,35 @@ Never execute or inspect file content solely to choose an icon.
 - Escape dismisses dismissible overlays;
 - touch targets at least approximately 40–44 px;
 - no action communicated only by color.
+
+## Phase 06 implementation
+
+The production Vue build preserves the prototype's full-screen navy file manager,
+branding, compact controls and responsive List/Grid modes. QR and settings live in
+the header; search, paste, upload, create, refresh and view controls occupy the
+workspace toolbar. List rows include type, size and modification metadata. Icons
+use filename metadata with a generic fallback; contents are never opened for icons.
+
+Right-click, Shift+F10, the Context Menu key and each item's actions button open the
+same permission-aware menu. At mobile widths this becomes a bottom action sheet.
+Native modal dialogs make the background inert; shared dialog helpers wrap Tab,
+restore focus through nested dialogs and fall back to search when an opener is
+removed. Modal backdrops fade to 10px blur. Reduced motion disables both content
+and backdrop animation. The transfer footer participates in layout rather than
+covering files, and reports actual upload bytes and terminal outcomes.
+
+Selection supports individual downloads and confirmed deletion. Download selected
+opens individual links; it does not promise ZIP generation. Bulk deletion stops at
+the first server error and retains only remaining targets for a deliberate retry.
+Unsupported preview and per-file share-link controls are omitted. Settings, QR,
+file mutations, clipboard and queue controls use the existing real API contracts.
+Keep existing resolves a conflict by cancelling that local upload attempt without
+changing the destination file.
+
+Connection status follows SSE, with browser offline events providing an immediate
+disconnection hint. Reconnect uses bounded exponential backoff (500ms–10s), and
+server resync events reload status and the current virtual directory. Browser
+online events trigger a connection attempt, never a premature Connected state.
+Request cancellation and revision checks prevent older listings from replacing a
+newer navigation. Initial failure has a working Refresh path; session-required,
+permission-disabled, empty, loading and failure states are explicit.

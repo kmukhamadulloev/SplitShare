@@ -1,8 +1,8 @@
-# Current Goal — Phase 05 Sessions, Permissions and QR
+# Current Goal — Phase 06 Production WebUI
 
-The active implementation goal is:
+The latest completed implementation goal is:
 
-`goals/PHASE_05_SESSIONS_PERMISSIONS_QR.md`
+`goals/PHASE_06_PRODUCTION_WEBUI.md`
 
 ## Product release program
 
@@ -43,8 +43,9 @@ Future mobile host work may reuse the Rust core through a native library, but cu
 
 ## Latest checkpoint
 
-Phase 05 implementation and local acceptance passed: cryptographic token sessions,
-backend remote permissions, persisted host settings and selectable local QR sharing.
-See the active phase for individual criteria and evidence. Phase 06 (Production
-WebUI) is next and has not started. Native Windows/macOS runtime and physical-device
-LAN/QR validation remain pending.
+Phase 06 passed local acceptance: production file-manager layout, accessible
+menus/dialogs, file type icons and reliable connection states. See
+`docs/ACCEPTANCE.md` for individual criteria and validation evidence.
+
+Next planned phase: `goals/PHASE_07_DESKTOP_TRAY_LIFECYCLE.md`. Phase 07 has not started.
+Native platform/device validation remains pending.

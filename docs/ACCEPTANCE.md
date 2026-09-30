@@ -173,3 +173,35 @@ Remote authorization tests inject socket peers; browser tests run against the re
 native server on this machine. Native Windows/macOS runtime, physical-device QR
 scanning, LAN/VPN reachability and Firefox/Safari validation remain outstanding.
 Local phase acceptance does not claim completed v1 release acceptance.
+
+## Phase 06 local acceptance — 2026-09-30
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| No prototype-only fake controls remain | PASS | Real API-backed file, upload, clipboard, QR/settings and selection workflows; unsupported preview/per-file sharing controls omitted |
+| Desktop and mobile E2E flows pass | PASS | 14 tests, seven workflows each on desktop and Pixel mobile Chromium against embedded Rust serving |
+| All icon-only actions have accessible names | PASS | Named buttons/links, Axe audits of list/grid/menus/create/settings, keyboard navigation and visible focus |
+| Refresh/reconnect converges to real server state | PASS | Initial API failure recovers through Refresh; offline browser reconnect discovers a real server mutation through SSE resync |
+| UI does not expose real paths | PASS | Virtual-path API use, displayed-path checks, existing HTTP redaction and storage sandbox regressions |
+
+Exact validation:
+
+- `bash scripts/check.sh`: PASS — `npm run typecheck --prefix web`,
+  `npm run test:unit --prefix web` (two test files: aggregation and file types),
+  `npm run build --prefix web`, `cargo fmt --check`,
+  `cargo clippy --locked --workspace --all-targets -- -D warnings`, and
+  `cargo test --locked --workspace` (47 Rust tests, including security regressions).
+- `cargo build --locked -p splitshare`: PASS.
+- `npm run test:e2e --prefix web`: PASS — 14 tests, including Axe checks,
+  nested conflict focus restoration, Keep existing, real downloads/deletions,
+  reduced-motion content/backdrops and connection recovery.
+- `bash scripts/build-release.sh`: PASS — production assets embedded in Rust.
+- `python3 scripts/smoke-foundation.py`: PASS.
+- `python3 scripts/smoke-sessions.py`: PASS.
+- `git diff --check`: PASS.
+- Desktop listing and mobile grid/action-sheet/settings screenshots inspected.
+
+No HTTP contracts changed; existing mutation, download, transfer, settings and SSE
+endpoints support this phase. Native tray is Phase 07. Native Windows/macOS runtime,
+physical mobile devices, Firefox/Safari, manual screen-reader checks and release
+stress/packaging gates remain pending in ISSUES.md. This is local phase acceptance.

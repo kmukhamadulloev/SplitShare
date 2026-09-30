@@ -126,7 +126,9 @@ A database may be added only by an explicit later goal that requires persistent 
 Phase 03 supports real HTTP browsing, file mutations, streamed downloads/Range,
 SSE and the initial file-manager UI. Phase 04 adds streamed uploads, an enforced
 parallel queue, cancellation/retry and clipboard workflows. Phase 05 adds token
-sessions, remote permissions, persisted host settings and local QR sharing. See [running and access policy](docs/HTTP_BROWSER.md).
+sessions, remote permissions, persisted host settings and local QR sharing. Phase 06
+adds the responsive production file manager, typed icons, selection actions,
+accessible menus/dialogs and reconnect recovery. See [running and access policy](docs/HTTP_BROWSER.md).
 See [foundation decisions](docs/FOUNDATION.md). Rust 1.98+ and Node 24+ are required for development.
 
 ```bash

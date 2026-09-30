@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict'
+import { fileCategory, formatBytes } from '../src/app/file-types.ts'
+assert.equal(fileCategory('photo.PNG'), 'image')
+assert.equal(fileCategory('backup.tar.gz'), 'archive')
+assert.equal(fileCategory('fake.pdf','directory'), 'folder')
+assert.equal(fileCategory('script.rs','file','text/plain'), 'code')
+assert.equal(fileCategory('unknown','file','video/mp4'), 'video')
+assert.equal(fileCategory('unknown','file','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'), 'spreadsheet')
+assert.equal(fileCategory('.env'), 'config')
+assert.equal(fileCategory('README'), 'unknown')
+assert.equal(fileCategory('unknown','file','untrusted/unknown'), 'unknown')
+assert.equal(formatBytes(0), '0 B')
+assert.equal(formatBytes(null), '—')
+assert.equal(formatBytes(1024 ** 3), '1.0 GiB')
+assert.equal(formatBytes(1024 ** 4 * 2.5), '2.5 TiB')

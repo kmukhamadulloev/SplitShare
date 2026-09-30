@@ -37,3 +37,9 @@ Replace scaffold UI with the approved full SplitShare file-manager experience.
 - all icon-only actions have accessible names;
 - refresh/reconnect converges to real server state;
 - UI does not expose real paths.
+
+## Completion
+
+Local acceptance PASS on 2026-09-30. All five criteria have individual evidence in
+[the acceptance matrix](../docs/ACCEPTANCE.md#phase-06-local-acceptance--2026-09-30).
+Native/device and cross-browser release gates remain tracked in `ISSUES.md`.

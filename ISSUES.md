@@ -30,6 +30,8 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Browser
 
+- [ ] Run manual screen-reader checks and native mobile touch/keyboard checks; Phase 06 automated Chromium accessibility and viewport checks are local coverage.
+
 - [ ] Validate Clipboard API behavior on Chromium, Firefox and Safari.
 - [ ] Validate multi-file browser download UX; no ZIP generation is planned for v1.
 - [ ] Define preview allowlist by MIME and browser capability.
