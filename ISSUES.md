@@ -10,16 +10,23 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Storage
 
-- [ ] Confirm Windows rename/replace semantics for atomic upload publishing.
+- [ ] Validate the handle-relative Windows rename/replace implementation on native NTFS; implementation cross-compiles but has not run locally.
 - [ ] Confirm filesystem behavior when the shared folder resides on a network filesystem.
-- [ ] Define exact Unicode normalization policy for conflict detection.
-- [ ] Validate symlink/reparse-point rejection on each desktop OS.
+- Unicode policy resolved: preserve bytes; native filesystem decides case/normalization conflicts (see `docs/STORAGE.md`).
+- [ ] Execute native Windows/macOS link, reparse, and rename tests; Linux tests and Windows/macOS cross-target Clippy pass.
 
 ## Networking
 
 - [ ] Validate interface ranking with Docker, WireGuard, Tailscale and common VM adapters.
 - [ ] Define IPv6 advertisement behavior before enabling IPv6 by default.
 - [ ] Confirm host-client classification on all supported bind modes.
+
+## HTTP/browser foundation
+
+- [ ] Native filesystem changes do not yet emit SSE; Refresh reloads them.
+- [ ] Interface classification/allowed authorities use a startup snapshot; hotplug refresh remains future work.
+- [ ] Validate separate-device LAN flows and native Windows/macOS Phase 03 runtime behavior.
+- [ ] Token sessions and granular permissions are Phase 05; Phase 03 defaults to local-only and requires explicit Open LAN for remote access.
 
 ## Browser
 
@@ -32,3 +39,10 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 - [ ] Windows signing strategy is not defined.
 - [ ] macOS signing/notarization strategy is not defined.
 - [ ] Linux packaging formats beyond release archive are not defined.
+
+## Transfers
+
+- [ ] Validate native Windows/macOS upload publication and cancellation at runtime.
+- [ ] Add crash-recovery scavenging for hidden partial files after abrupt process death.
+- [ ] Run 1 GiB and multi-device transfer stress tests for release acceptance.
+- Host upload limits currently apply at startup; protected runtime settings are Phase 05.

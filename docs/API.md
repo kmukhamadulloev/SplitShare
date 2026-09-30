@@ -1,7 +1,19 @@
 # HTTP API
 
-Phase 01 status: all feature endpoints below are planned. Requests currently
-return a safe `NOT_FOUND` JSON envelope with HTTP 404. Only frontend assets are served.
+Phases 03–04 implement status, directory listing/create/rename/delete, streamed
+downloads with Range, uploads, transfer snapshots/cancellation and SSE. Previews,
+sessions and host settings endpoints below remain planned. The exact implemented schemas and response statuses are in
+[openapi.yaml](openapi.yaml). Startup/access policy: [HTTP_BROWSER.md](HTTP_BROWSER.md).
+
+Implemented mutation bodies:
+
+- Create: `{ "parent": "/", "name": "New folder" }` → 201 `{ "path": "/New folder" }`.
+- Rename: `{ "from": "/old", "to": "/new" }` → 204; never overwrites.
+- Delete: `{ "path": "/item" }` → 204; nonempty directories return 409.
+
+All mutations require `X-SplitShare-Request: 1`. File metadata mutations use JSON;
+uploads use a raw file body and cancellation has no body. Invalid/oversized bodies
+return safe typed errors. Unknown endpoints return JSON 404, never SPA HTML.
 
 Base:
 
@@ -55,7 +67,23 @@ Requests and responses use virtual paths only.
 POST /api/v1/uploads?path=/destination
 ```
 
-One file per request.
+One raw file per request with `Content-Type: application/octet-stream`.
+Required headers: `X-SplitShare-Request: 1`, `X-Transfer-ID` and `X-Transfer-Key`.
+Generate independent cryptographically random 128-bit ID/key values as 32 hex
+characters. Keys authorize cancellation and never appear in snapshots or SSE.
+Optional `policy` query: `ask` (default), `reject`, `replace`, `auto_rename`.
+Ask/reject conflicts return 409; the browser asks before retrying with another policy.
+Optional Content-Length supplies the expected byte count. Success is 201 with a
+completed Transfer only after atomic publication. JSON's 16 KiB limit does not
+apply to uploads. Capacity exhaustion returns 429; body failure returns a safe error.
+
+`GET /api/v1/transfers` returns at most 128 transfer snapshots.
+`DELETE /api/v1/transfers/{id}` requires the mutation header and transfer key;
+202 requests cancellation, 403 rejects a wrong key, 404 means missing, and 409
+means publication has begun or the transfer is already terminal. Observe the
+terminal snapshot before assuming cleanup has completed.
+
+See [TRANSFERS.md](TRANSFERS.md) for states, limits and host policy.
 
 The frontend handles multi-selection as a queue; server concurrency policy remains authoritative.
 
@@ -112,8 +140,11 @@ SSE event names:
 - `filesystem.changed`
 - `transfer.created`
 - `transfer.updated`
-- `transfer.removed`
-- `session.permissions_changed`
+- `filesystem.resync`
+- `transfer.resync`
+
+Resync events require fetching the corresponding snapshot. Transfer created/updated
+payloads are Transfer objects. Session events remain planned.
 
 Event payloads are typed JSON.
 

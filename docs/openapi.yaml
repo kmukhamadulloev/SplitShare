@@ -2,141 +2,544 @@ openapi: 3.1.0
 info:
   title: SplitShare API
   version: 0.1.0
-  description: Initial contract scaffold. Refine during ordered implementation phases.
+  description: Phases 03–04 implemented contract. Local-only by default; remote access
+    requires explicit Open LAN. Token sessions, previews and runtime settings remain
+    planned.
 servers:
-  - url: /
+- url: /
 paths:
   /api/v1/status:
     get:
-      summary: Read client-visible server/share status
+      summary: Read actual share state and socket-peer locality
       responses:
         '200':
-          description: Status
+          description: Current state
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Status'
+        '403':
+          $ref: '#/components/responses/Error'
   /api/v1/files:
     get:
       summary: List a virtual directory
       parameters:
-        - in: query
-          name: path
-          schema: { type: string, default: / }
+      - $ref: '#/components/parameters/Path'
       responses:
         '200':
-          description: Directory listing
+          description: Real storage listing
           content:
             application/json:
               schema:
                 type: object
-                required: [path, entries]
+                required:
+                - path
+                - entries
                 properties:
-                  path: { type: string }
+                  path:
+                    $ref: '#/components/schemas/VirtualPath'
                   entries:
                     type: array
-                    items: { $ref: '#/components/schemas/FileEntry' }
-  /api/v1/uploads:
-    post:
-      summary: Stream one file into a virtual destination
+                    items:
+                      $ref: '#/components/schemas/FileEntry'
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+    delete:
+      summary: Permanently delete a file or empty directory
       parameters:
-        - in: query
-          name: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required: [file]
-              properties:
-                file:
-                  type: string
-                  format: binary
-      responses:
-        '202':
-          description: Upload accepted
-        '409':
-          description: Name conflict requiring explicit resolution
-  /api/v1/files/download:
-    get:
-      summary: Download or Range-read a file
-      parameters:
-        - in: query
-          name: path
-          required: true
-          schema: { type: string }
-      responses:
-        '200': { description: Full file }
-        '206': { description: Partial content }
-        '416': { description: Invalid range }
-  /api/v1/directories:
-    post:
-      summary: Create a directory
+      - $ref: '#/components/parameters/MutationHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [parent, name]
+              additionalProperties: false
+              required:
+              - path
               properties:
-                parent: { type: string }
-                name: { type: string }
+                path:
+                  $ref: '#/components/schemas/VirtualPath'
       responses:
-        '201': { description: Created }
+        '204':
+          description: Deleted
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/directories:
+    post:
+      summary: Create a directory
+      parameters:
+      - $ref: '#/components/parameters/MutationHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - parent
+              - name
+              properties:
+                parent:
+                  $ref: '#/components/schemas/VirtualPath'
+                name:
+                  type: string
+                  description: Single validated filename component
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - path
+                properties:
+                  path:
+                    $ref: '#/components/schemas/VirtualPath'
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
   /api/v1/files/rename:
     post:
-      summary: Rename an item
+      summary: Rename or move without overwriting
+      parameters:
+      - $ref: '#/components/parameters/MutationHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - from
+              - to
+              properties:
+                from:
+                  $ref: '#/components/schemas/VirtualPath'
+                to:
+                  $ref: '#/components/schemas/VirtualPath'
       responses:
-        '200': { description: Renamed }
-  /api/v1/events:
+        '204':
+          description: Renamed
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/files/download:
+    parameters:
+    - $ref: '#/components/parameters/Path'
     get:
-      summary: Server-Sent Events stream
+      summary: Stream a file as an attachment
+      parameters:
+      - in: header
+        name: Range
+        schema:
+          type: string
+        description: One bytes=start-end, bytes=start- or bytes=-suffix range. Multiple,
+          malformed or unsatisfiable ranges return 416.
+      - in: header
+        name: If-Range
+        schema:
+          type: string
+        description: Validators are not issued; requests with If-Range receive the
+          complete representation.
       responses:
         '200':
-          description: text/event-stream
-  /api/v1/host/settings:
+          description: Full file, Content-Length and Accept-Ranges bytes
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Partial file with Content-Range and exact Content-Length
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '416':
+          description: Invalid range; Content-Range is bytes */size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+    head:
+      summary: File response headers without body; Range is ignored
+      responses:
+        '200':
+          description: Full representation headers
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/events:
     get:
-      summary: Read host settings
+      summary: Bounded SSE stream for application-originated mutations
+      description: filesystem.resync and transfer.resync on connection/reconnection
+        or lag require snapshot reloads. filesystem.changed contains paths; transfer.created/transfer.updated
+        contain Transfer objects. No replay IDs or native filesystem watcher. Keepalive
+        every 15 seconds.
       responses:
-        '200': { description: Host settings }
-        '403': { description: Host client required }
-    put:
-      summary: Update host settings
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/uploads:
+    post:
+      summary: Stream one file and atomically publish it
+      description: Waits for a backend permit before reading. Content-Length, when
+        supplied, is the expected total. Retry starts from zero with fresh ID/key.
+      parameters:
+      - $ref: '#/components/parameters/MutationHeader'
+      - $ref: '#/components/parameters/TransferId'
+      - $ref: '#/components/parameters/TransferKey'
+      - in: query
+        name: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/VirtualPath'
+      - in: query
+        name: policy
+        schema:
+          type: string
+          enum:
+          - ask
+          - reject
+          - replace
+          - auto_rename
+          default: ask
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
       responses:
-        '200': { description: Updated }
-        '403': { description: Host client required }
+        '201':
+          description: Published successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '415':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/transfers:
+    get:
+      summary: Read bounded server-authoritative transfer history
+      responses:
+        '200':
+          description: Current snapshots without cancellation keys
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 128
+                items:
+                  $ref: '#/components/schemas/Transfer'
+        '403':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/transfers/{id}:
+    delete:
+      summary: Request cancellation before publication begins
+      parameters:
+      - $ref: '#/components/parameters/MutationHeader'
+      - $ref: '#/components/parameters/TransferKey'
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Cancellation requested; observe terminal snapshot for cleanup
+            completion
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
 components:
+  parameters:
+    Path:
+      in: query
+      name: path
+      schema:
+        $ref: '#/components/schemas/VirtualPath'
+        default: /
+    MutationHeader:
+      in: header
+      name: X-SplitShare-Request
+      required: true
+      schema:
+        type: string
+        const: '1'
+      description: Required for mutations. JSON bodies limited to 16 KiB; raw uploads
+        stream without that limit. Cross-origin access disabled.
+    TransferKey:
+      in: header
+      name: X-Transfer-Key
+      required: true
+      schema:
+        type: string
+        pattern: ^[0-9a-fA-F]{32}$
+      description: Independent random 128-bit cancellation secret; never exposed in
+        snapshots.
+    TransferId:
+      in: header
+      name: X-Transfer-ID
+      required: true
+      schema:
+        type: string
+        pattern: ^[0-9a-fA-F]{32}$
+  responses:
+    Error:
+      description: Typed safe error; never includes host paths
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
+    VirtualPath:
+      type: string
+      description: Validated virtual-root path; see STORAGE.md for byte limits and
+        rejected syntax.
+      examples:
+      - /
+      - /Documents/notes.txt
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          - details
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: 'null'
     Status:
       type: object
-      required: [version, sharing, local_client, permissions]
+      required:
+      - version
+      - sharing
+      - root_label
+      - local_client
+      - share_mode
+      - upload_concurrency
+      - permissions
       properties:
-        version: { type: string }
-        sharing: { type: boolean }
-        local_client: { type: boolean }
+        version:
+          type: string
+        sharing:
+          type: boolean
+        root_label:
+          type: string
+        local_client:
+          type: boolean
+        share_mode:
+          type: string
+          enum:
+          - local_only
+          - open_lan
+        upload_concurrency:
+          type: integer
+          minimum: 1
+          maximum: 32
+          description: Effective backend-enforced upload limit
         permissions:
-          $ref: '#/components/schemas/Permissions'
-    Permissions:
-      type: object
-      required: [browse, download, upload, create_directory, rename, delete]
-      properties:
-        browse: { type: boolean }
-        download: { type: boolean }
-        upload: { type: boolean }
-        create_directory: { type: boolean }
-        rename: { type: boolean }
-        delete: { type: boolean }
+          type: object
+          required:
+          - browse
+          - download
+          - upload
+          - create_directory
+          - rename
+          - delete
+          properties:
+            browse:
+              type: boolean
+            download:
+              type: boolean
+            upload:
+              type: boolean
+            create_directory:
+              type: boolean
+            rename:
+              type: boolean
+            delete:
+              type: boolean
     FileEntry:
       type: object
-      required: [path, name, kind]
+      required:
+      - path
+      - name
+      - kind
+      - size
+      - modified_unix_seconds
       properties:
-        path: { type: string }
-        name: { type: string }
-        kind: { type: string, enum: [file, directory] }
-        size: { type: [integer, 'null'] }
-        modified: { type: [string, 'null'], format: date-time }
-        mime: { type: [string, 'null'] }
+        path:
+          $ref: '#/components/schemas/VirtualPath'
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - file
+          - directory
+        size:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        modified_unix_seconds:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+    Transfer:
+      type: object
+      required:
+      - id
+      - path
+      - direction
+      - state
+      - failure
+      - total_bytes
+      - bytes_per_second
+      - eta_seconds
+      - transferred_bytes
+      - created_unix_ms
+      - updated_unix_ms
+      properties:
+        id:
+          type: string
+        path:
+          $ref: '#/components/schemas/VirtualPath'
+        direction:
+          type: string
+          const: upload
+        state:
+          type: string
+          enum:
+          - queued
+          - uploading
+          - publishing
+          - completed
+          - failed
+          - cancelled
+        failure:
+          type:
+          - string
+          - 'null'
+        total_bytes:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        bytes_per_second:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        eta_seconds:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        transferred_bytes:
+          type: integer
+          minimum: 0
+        created_unix_ms:
+          type: integer
+          minimum: 0
+        updated_unix_ms:
+          type: integer
+          minimum: 0

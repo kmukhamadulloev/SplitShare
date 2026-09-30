@@ -58,3 +58,7 @@ SplitShare/
 ├── Cargo.toml
 └── project.json
 ```
+
+Phase 03 adds `crates/splitshare-application` for transport-independent service
+orchestration between HTTP and storage. `web/src/app` contains typed API and Pinia
+state; `web/tests` runs browser workflows against the actual Rust process.

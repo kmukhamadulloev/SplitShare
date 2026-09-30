@@ -71,3 +71,6 @@ mod tests {
 
 pub mod storage;
 pub use storage::{ConflictPolicy, EntryKind, FileEntry, StorageError, VirtualPath};
+
+pub mod transfer;
+pub use transfer::{Transfer, TransferState};

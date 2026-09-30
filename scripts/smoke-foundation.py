@@ -33,14 +33,14 @@ with tempfile.TemporaryDirectory() as directory:
             for asset in re.findall(r'(?:src|href)="(/[^" ]+)"', html):
                 with urllib.request.urlopen('http://127.0.0.1:8080' + asset) as response:
                     assert response.status == 200 and response.read()
-            for path in ['/api/v1/files', '/j/private-token']:
+            for path, expected_status, expected_code in [('/api/v1/files', 503, 'SHARE_NOT_CONFIGURED'), ('/j/private-token', 404, 'NOT_FOUND')]:
                 try:
                     urllib.request.urlopen('http://127.0.0.1:8080' + path)
                 except urllib.error.HTTPError as error:
-                    assert error.code == 404
-                    assert json.load(error)['error']['code'] == 'NOT_FOUND'
+                    assert error.code == expected_status
+                    assert json.load(error)['error']['code'] == expected_code
                 else:
-                    raise AssertionError('Feature route unexpectedly available')
+                    raise AssertionError('Unconfigured feature unexpectedly available')
             config = json.loads((root / 'data/SplitShare/config.json').read_text())
             assert config['version'] == 1
             process.terminate()

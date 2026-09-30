@@ -123,19 +123,22 @@ A database may be added only by an explicit later goal that requires persistent 
 
 ## Development
 
-Phase 01 has a runnable backend foundation; folder sharing is not implemented yet.
+Phase 03 supports real HTTP browsing, file mutations, streamed downloads/Range,
+SSE and the initial file-manager UI. Phase 04 adds streamed uploads, an enforced
+parallel queue, cancellation/retry and clipboard workflows. See [running and access policy](docs/HTTP_BROWSER.md).
 See [foundation decisions](docs/FOUNDATION.md). Rust 1.98+ and Node 24+ are required for development.
 
 ```bash
 npm ci --prefix web
-./scripts/dev.sh
+./scripts/dev.sh --root /path/to/share --parallel-uploads 2
 ```
 
 Vite opens at http://127.0.0.1:5173; Rust serves embedded assets at
 http://127.0.0.1:8080. Ctrl+C stops development processes.
 
 For a standalone binary: `./scripts/build-release.sh`, then run
-`./target/release/splitshare`. Node is not required at runtime.
+`./target/release/splitshare --root /path/to/share`. Node is not required at runtime.
+LAN access requires explicit `--bind 0.0.0.0:8080 --open-lan`; token sessions are Phase 05.
 
 Frontend:
 

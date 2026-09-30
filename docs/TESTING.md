@@ -145,3 +145,66 @@ On Linux, `python3 scripts/smoke-foundation.py` runs a copied release binary in 
 fresh temporary directory with isolated config, checks assets and unavailable
 API/join routes, and verifies SIGTERM exit and token-log redaction. Port 8080 must
 be available. Later-phase test lists above remain planned.
+
+## Phase 02 storage checks
+
+`cargo test -p splitshare-storage -p splitshare-core` covers path syntax and serde
+validation, temporary filesystem operations, conflict publication races across
+independent Storage instances, root boundaries, safe serialization, cleanup,
+length checks, empty/unknown-size uploads, and a 16 MiB file in 64 KiB chunks.
+Unix tests exercise final symlinks, sockets and repeated concurrent symlink swaps.
+Windows tests explicitly exercise directory and file reparse links and require
+Developer Mode or elevated symlink privileges; missing privileges fail the tests,
+not silently skip them. The native CI matrix must supply those privileges.
+
+Cross-target type/lint checks (not substitutes for native runtime tests):
+
+```bash
+cargo clippy --locked -p splitshare-storage --tests --target x86_64-pc-windows-msvc -- -D warnings
+cargo clippy --locked -p splitshare-storage --tests --target x86_64-apple-darwin -- -D warnings
+```
+
+Browser E2E remains inapplicable to the Phase 02 library-only scope.
+
+
+## Phase 03 checks
+
+`bash scripts/check.sh` runs the full Rust suite including real HTTP listeners and
+filesystem fixtures, Range/HEAD, malformed requests, safe errors, Host/Origin checks,
+peer forgery, SSE emission/limits/shutdown and an 8 MiB streamed HTTP download.
+
+Browser setup and checks:
+
+```bash
+npm ci --prefix web
+npm run build --prefix web
+cargo build --locked -p splitshare
+npx --prefix web playwright install chromium
+npm run test:e2e --prefix web
+```
+
+Playwright runs desktop Chromium and a mobile Pixel viewport against the embedded
+production Vue build. Its Node helper is test-only; the server remains Rust.
+CI installs Chromium prerequisites and runs this on Linux. Release smoke remains
+`bash scripts/build-release.sh && python3 scripts/smoke-foundation.py` and now
+verifies that unconfigured file endpoints return 503 while join routes remain 404.
+
+## Phase 04 checks
+
+`bash scripts/check.sh` additionally runs frontend byte-aggregation unit tests and
+application/HTTP transfer tests for backend limits, queued disconnects, cancellation
+keys, cleanup, conflicts, streaming and bounded history. The browser suite now has
+six tests: three workflows on desktop and mobile, including active cancellation
+under network throttling followed by a full retry. Clipboard events are deterministic
+fixtures; native permission prompts and Firefox/Safari still require manual testing.
+
+After `bash scripts/build-release.sh`, run `python3 scripts/test-upload-memory.py`
+on Linux. It samples real server RSS during generated 8 MiB and 256 MiB uploads;
+port 43124 must be free. This does not replace the planned 1 GiB release stress test.
+
+Cross-target compile checks:
+
+```bash
+cargo check --locked --workspace --all-targets --target x86_64-pc-windows-msvc
+cargo check --locked --workspace --all-targets --target x86_64-apple-darwin
+```

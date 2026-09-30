@@ -16,3 +16,4 @@ tokio.workspace = true
 tokio-util.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+splitshare-application = { path = "../../crates/splitshare-application" }

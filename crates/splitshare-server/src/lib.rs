@@ -1,12 +1,16 @@
-//! HTTP adapter and compile-time frontend assets. No file APIs exist in Phase 01.
+//! HTTP adapter, streamed downloads, SSE and embedded frontend.
 use axum::{
-    Json, Router,
+    Router,
     body::Body,
     http::{Method, StatusCode, Uri, header},
     response::{IntoResponse, Response},
 };
 use rust_embed::RustEmbed;
-use serde::Serialize;
+mod api;
+mod error;
+mod range;
+mod uploads;
+pub use api::ServerState;
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
 
@@ -14,29 +18,13 @@ use tokio_util::sync::CancellationToken;
 #[folder = "../../web/dist/"]
 struct Assets;
 
-#[derive(Serialize)]
-struct ErrorEnvelope {
-    error: ErrorBody,
-}
-#[derive(Serialize)]
-struct ErrorBody {
-    code: &'static str,
-    message: &'static str,
-    details: Option<()>,
-}
-
 fn not_found() -> Response {
-    (
+    error::ApiError::new(
         StatusCode::NOT_FOUND,
-        Json(ErrorEnvelope {
-            error: ErrorBody {
-                code: "NOT_FOUND",
-                message: "The requested resource is unavailable.",
-                details: None,
-            },
-        }),
+        "NOT_FOUND",
+        "The requested resource is unavailable.",
     )
-        .into_response()
+    .into_response()
 }
 
 async fn frontend(method: Method, uri: Uri) -> Response {
@@ -93,9 +81,53 @@ pub fn router() -> Router {
     Router::new().fallback(frontend)
 }
 
-/// The composition root owns cancellation; the HTTP adapter drains active requests.
+pub fn api_router(state: ServerState) -> Router {
+    use axum::{
+        extract::DefaultBodyLimit,
+        middleware,
+        routing::{get, post},
+    };
+    Router::new()
+        .route("/api/v1/status", get(api::status))
+        .route("/api/v1/files", get(api::list).delete(api::delete))
+        .route("/api/v1/directories", post(api::mkdir))
+        .route("/api/v1/files/rename", post(api::rename))
+        .route("/api/v1/files/download", get(api::download))
+        .route("/api/v1/events", get(api::events))
+        .route(
+            "/api/v1/uploads",
+            post(uploads::upload).layer(DefaultBodyLimit::disable()),
+        )
+        .route("/api/v1/transfers", get(uploads::list))
+        .route(
+            "/api/v1/transfers/{id}",
+            axum::routing::delete(uploads::cancel),
+        )
+        .fallback(frontend)
+        .method_not_allowed_fallback(|| async {
+            error::ApiError::new(
+                StatusCode::METHOD_NOT_ALLOWED,
+                "METHOD_NOT_ALLOWED",
+                "The method is not supported.",
+            )
+        })
+        .layer(DefaultBodyLimit::max(16 * 1024))
+        .layer(middleware::from_fn_with_state(state.clone(), api::guard))
+        .with_state(state)
+}
+
+/// The composition root owns cancellation; SSE and file streams share this token.
 pub async fn serve(listener: TcpListener, shutdown: CancellationToken) -> std::io::Result<()> {
     axum::serve(listener, router())
         .with_graceful_shutdown(shutdown.cancelled_owned())
         .await
+}
+pub async fn serve_api(listener: TcpListener, state: ServerState) -> std::io::Result<()> {
+    let shutdown = state.shutdown.clone();
+    axum::serve(
+        listener,
+        api_router(state).into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown.cancelled_owned())
+    .await
 }

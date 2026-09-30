@@ -44,6 +44,11 @@ Owns domain types and application rules:
 
 Must not depend on Axum, Vue or native tray code.
 
+### `splitshare-application`
+
+Owns FileService orchestration, bounded blocking filesystem jobs and mutation event
+publication. Depends on core/storage/Tokio; never on Axum. Server calls this layer.
+
 ### `splitshare-storage`
 
 Owns:
@@ -208,3 +213,19 @@ If persistent history becomes a future requirement, add it through an explicit m
 
 See [Phase 01 decisions](FOUNDATION.md) for dependencies, configuration, paths,
 asset serving and lifecycle ownership. Later sections above describe target architecture.
+
+## Implemented storage boundary
+
+Phase 02 adds validated `VirtualPath`, `FileEntry`, `StorageError` and
+`ConflictPolicy` in core without HTTP or filesystem dependencies. Storage owns
+native capabilities, filesystem resolution, readers and temporary upload lifetimes.
+Read handles are seekable; upload chunks are bounded to 64 KiB. Phase 03 exposes it through FileService and typed HTTP routes. See [STORAGE.md](STORAGE.md) for exact behavior and limits.
+
+## HTTP/browser milestone
+
+See [HTTP_BROWSER.md](HTTP_BROWSER.md) for implemented routes, security boundary,
+streaming, SSE, local classification and browser state.
+
+Phase 04 adds the application TransferManager and raw streaming HTTP uploads,
+transfer snapshots/cancellation and SSE progress. See [TRANSFERS.md](TRANSFERS.md)
+and [API.md](API.md) for the implemented contract and startup host policy.

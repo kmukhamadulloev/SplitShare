@@ -11,9 +11,9 @@ The project intentionally follows a release-quality path instead of an MVP path.
 | Phase | Goal | Status |
 |---|---|---|
 | 01 | Foundation | Implemented; local acceptance PASS, native CI pending |
-| 02 | Storage sandbox | ACTIVE |
-| 03 | HTTP + file browsing | Planned |
-| 04 | Transfers + clipboard | Planned |
+| 02 | Storage sandbox | Implemented; Linux acceptance PASS, native runtime CI pending |
+| 03 | HTTP + file browsing | Implemented; Linux/browser acceptance PASS, native runtime CI pending |
+| 04 | Transfers + clipboard | Implemented; Linux/browser acceptance PASS, native runtime CI pending |
 | 05 | Sessions + permissions + QR | Planned |
 | 06 | Production WebUI | Planned |
 | 07 | Desktop tray + lifecycle | Planned |

@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "app/splitshare",
     "crates/splitshare-core",
+    "crates/splitshare-application",
     "crates/splitshare-storage",
     "crates/splitshare-network",
     "crates/splitshare-server",
@@ -23,8 +24,8 @@ strip = "symbols"
 
 [workspace.dependencies]
 axum = "0.8.9"
-tokio = { version = "1.47", features = ["macros", "rt-multi-thread", "net", "signal", "time"] }
-tokio-util = { version = "0.7", features = ["rt"] }
+tokio = { version = "1.47", features = ["macros", "rt-multi-thread", "net", "signal", "time", "fs", "io-util", "sync"] }
+tokio-util = { version = "0.7", features = ["rt", "io"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"
@@ -40,3 +41,9 @@ cap-std = "4.0.3"
 cap-fs-ext = "4.0.3"
 getrandom = "0.4"
 rustix = { version = "1.1", features = ["fs"] }
+
+async-stream = "0.3"
+if-addrs = "0.15"
+percent-encoding = "2.3"
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream"] }
+futures-util = "0.3"

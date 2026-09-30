@@ -126,3 +126,34 @@ Suggested extensions:
 - `.sh`
 
 Format detection is a convenience only. Never execute pasted content.
+
+## Implemented Phase 04 policy
+
+Host configuration is loaded at startup. `--parallel-uploads N` selects 1–32
+workers; `--serial-uploads` forces one. Overrides are process-local. Runtime host
+settings authorization/UI belongs to Phase 05.
+
+TransferManager lives in the application layer and does not depend on Axum.
+A permit is acquired before consuming the request body and retained through
+cleanup/publication. A bounded two-slot channel carries chunks of at most 64 KiB
+to a blocking filesystem worker. Input idle timeout is 60 seconds. Temporary files
+remain inside the destination filesystem and are never listed as completed files.
+
+States: queued → uploading → publishing → completed, or failed/cancelled.
+Progress counts bytes actually written; events are throttled to about 100 ms.
+Publishing is an atomic cancellation boundary: cancellation after it starts returns
+409. Retrying uses a fresh ID/key and starts at byte zero. Snapshots and SSE expose
+only virtual paths. History is in-memory, bounded to 128 records; terminal records
+are evicted first, and a full active queue rejects new work with 429.
+
+The browser uses one shared SSE connection, resynchronizes snapshots after gaps,
+and limits scheduling to the advertised policy (at most six browser requests).
+Pasted images require preview confirmation; text is a local draft until Save and
+is limited to 2 MiB. File paste and drag/drop use the same upload queue. Unknown
+sizes have no invented percentage. Failed/cancelled rows do not claim publication.
+Token/session ownership is Phase 05; current cancellation uses the separate key.
+
+Linux memory regression: `python3 scripts/test-upload-memory.py` runs the release
+binary with 8 MiB and 256 MiB generated uploads and checks RSS growth below 32 MiB.
+Abrupt process death can leave hidden partial files; crash scavenging is future
+reliability work. Graceful cancellation, disconnection and shutdown are covered.

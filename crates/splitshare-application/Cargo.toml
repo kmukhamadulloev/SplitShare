@@ -1,0 +1,18 @@
+[package]
+name = "splitshare-application"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+splitshare-core = { path = "../splitshare-core" }
+splitshare-storage = { path = "../splitshare-storage" }
+tokio.workspace = true
+serde.workspace = true
+tracing.workspace = true
+tokio-util.workspace = true
+futures-util.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

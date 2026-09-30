@@ -1,8 +1,8 @@
-# Current Goal — Phase 02 Storage Sandbox
+# Current Goal — Phase 04 Transfers and Clipboard
 
 The active implementation goal is:
 
-`goals/PHASE_02_STORAGE_SANDBOX.md`
+`goals/PHASE_04_TRANSFERS_CLIPBOARD.md`
 
 ## Product release program
 
@@ -43,6 +43,7 @@ Future mobile host work may reuse the Rust core through a native library, but cu
 
 ## Latest checkpoint
 
-Phase 01 passed local Linux acceptance. Phase 02 is now active: virtual paths,
-capability-based filesystem operations, streamed handles and atomic upload publication.
-Native Windows/macOS validation remains pending CI. HTTP file routes are Phase 03.
+Phase 04 implementation and local acceptance passed: streamed uploads, backend
+concurrency/progress/cancellation, browser queue and clipboard workflows.
+See the active phase for individual criteria and evidence. Phase 05 is next and
+has not started. Native Windows/macOS runtime validation remains pending.

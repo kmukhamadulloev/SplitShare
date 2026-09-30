@@ -12,7 +12,7 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-./target/debug/splitshare &
+./target/debug/splitshare --dev "$@" &
 pids+=("$!")
 (cd web && exec npm run dev -- --strictPort) &
 pids+=("$!")

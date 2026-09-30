@@ -2,6 +2,18 @@
 
 No public release has been produced from this scaffold.
 
+## Unreleased development
+
+- Phase 01: runnable native foundation, versioned configuration and embedded frontend.
+- Phase 02: validated virtual paths, capability-based storage operations, seekable
+  file reads, bounded upload writers, atomic conflict policies and cleanup.
+- Phase 03: typed HTTP file operations, streamed Range downloads, bounded SSE,
+  peer classification, explicit Open LAN startup and a real Vue/Pinia browser.
+- Phase 04: bounded streaming uploads, backend concurrency, truthful SSE progress,
+  cancellation/retry, conflict resolution and file/image/text clipboard workflows.
+- Local Linux tests pass; native Windows/macOS runtime verification is pending.
+  Token sessions, granular permissions and native tray remain later phases.
+
 ## Planned
 
 ### 1.0.0
