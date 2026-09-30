@@ -234,7 +234,25 @@ After coding:
 7. run security regression tests where applicable;
 8. update docs;
 9. update `ISSUES.md`;
-10. report each acceptance criterion individually.
+10. commit the completed work according to the Git rule below;
+11. report each acceptance criterion individually.
+
+## Git rule
+
+After completing a feature, phase, fix, or documentation change, automatically
+create a local Git commit once all applicable validation passes. No additional
+confirmation is required.
+
+Include all changes belonging to that completed work: implementation, tests,
+documentation, configuration and lockfiles. Review the diff and stage explicit
+paths; preserve unrelated or unfinished workspace changes. Never commit secrets,
+generated caches or build artifacts.
+
+Use a clear commit message describing the completed change. Do not present work
+with failing mandatory checks as complete. Report the commit hash, validation
+results and any remaining uncommitted changes in the completion report.
+
+Push only when explicitly requested by the user.
 
 ## Definition of Done
 
