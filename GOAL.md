@@ -59,3 +59,8 @@ and validation are recorded in docs/ACCEPTANCE.md.
 The follow-up report identified HTTP LAN clipboard restrictions: Paste button
 failures now show an undetected state, not a text editor. Real browser clipboard
 button access and HTTP LAN behavior have dedicated regression coverage.
+
+Mobile upload follow-up implemented: a media/file selection sheet on narrow or
+coarse-pointer devices, a touch-and-hold paste area, and image confirmation with
+filename editing. Desktop selection, drag/drop and keyboard paste are preserved.
+Physical iPad/Android paste-menu behavior remains a device acceptance check.

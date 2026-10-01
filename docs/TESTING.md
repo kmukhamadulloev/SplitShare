@@ -400,3 +400,23 @@ bytes. This runs in an isolated headless browser; no clipboard API mock is used.
 Firefox/WebKit skip that permission-grant test. A separate test visits the host's
 actual HTTP LAN interface and verifies blocked button access cannot become a text
 draft. Permission denial/retry remains a deterministic fixture across engines.
+
+## Adaptive mobile upload
+
+`web/tests/mobile-upload.spec.ts` exercises the narrow-screen sheet, real browser
+file-chooser events and accept filters, sequential image confirmation/cancellation,
+byte-for-byte upload/download, unrestricted file selection, editable fallback
+paste events, fallback photo selection, cancelled pickers, unsupported image
+preview retention, accessibility and wide touch-screen behavior. It also checks
+that wide fine-pointer desktop Upload still opens the picker directly.
+
+The browser tests provide files to the browser chooser; they do not automate an
+OS photo library. The long-press data fixture is delivered to the actual textarea;
+it does not simulate a native touch callout menu. Run physical iPadOS Safari and
+Android smoke checks: choose multiple photos, cancel one preview, upload another,
+copy a screenshot/image, long-press the paste area, and confirm the resulting file.
+If the browser exposes no image bytes, verify Choose photo/Browse files remains
+available. Test both portrait and tablet landscape widths.
+
+Generated `test-results/upload-sheet-*.png` and `upload-paste-*.png` screenshots
+remain ignored local artifacts. No new HTTP contract or server policy is added.

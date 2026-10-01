@@ -214,3 +214,15 @@ interface/port inputs. Network changes apply through their explicit button or
 The QR icon routes unconfigured hosts to folder setup; loopback QR has a Network
 settings shortcut. QR loading, generation errors and retries are explicit.
 See [HOST_SETUP.md](HOST_SETUP.md) for the complete workflow and persistence rules.
+
+## Mobile upload and clipboard
+
+The primary Upload button has a visible label. On narrow/coarse-pointer screens
+it opens a navy bottom sheet with Photos & videos, Browse files and Paste from
+clipboard. The existing indigo/cyan accents, modal backdrop and focus handling
+are retained. Wide touch tablets use the same sheet.
+
+When direct clipboard reading is unavailable, show a large editable Paste area
+with touch-and-hold guidance and adjacent photo/file alternatives. Images use a
+preview/filename/Upload confirmation; text gets its own draft after detection.
+Desktop Upload, drag/drop and Ctrl+V remain available. See TRANSFERS.md.

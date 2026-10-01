@@ -403,3 +403,48 @@ Validation (all PASS):
   permission-grant variants).
 - `bash scripts/build-release.sh`: rebuilt release executable.
 - `git diff --check`: clean. Documentation and local Git checkpoint completed.
+
+## Adaptive mobile upload — 2026-10-01
+
+The user approved Upload as the primary mobile action, with photo/file selection,
+a native long-press paste target and image confirmation. Implemented in the
+existing Vue manager and upload queue; HTTP/API contracts and Rust policy are
+unchanged. No HTTPS setup or synthetic keyboard shortcut is required for selection.
+
+Acceptance criteria:
+
+- PASS: Narrow and coarse-pointer devices offer Photos & videos, Browse files and Paste
+  from clipboard in a bottom sheet, including wide touch tablets.
+- PASS: Media/file actions invoke real browser file choosers with the appropriate accept
+  filters; cancelling a chooser leaves the previous dialog available.
+- PASS: Received images offer a preview, editable filename and explicit Upload. Multiple
+  images can be confirmed/cancelled independently; downloaded bytes match input.
+- PASS: An unsupported image preview retains the original uploadable file.
+- PASS: Clipboard fallback has an editable Paste area with touch/desktop instructions,
+  photo/file alternatives, and no ineffective Retry when the API is unavailable.
+- PASS: Desktop direct picker, drag/drop, keyboard paste, existing file manager and host
+  configuration regressions remain covered; modal accessibility remains covered.
+
+Browser fixtures exercise the actual textarea and browser file-chooser events,
+not physical mobile OS menus/photo libraries. Physical iPadOS/Android long-press
+image paste and native media-provider validation remain explicitly pending in
+ISSUES.md. Generated screenshots were inspected locally and are not committed.
+
+Exact validation:
+
+- `bash scripts/check.sh`: PASS — 62 Rust unit/integration/security tests, both
+  frontend unit files, typecheck, build, formatting and Clippy.
+- `npm run typecheck --prefix web`, `npm run test:unit --prefix web`,
+  `npm run build --prefix web` and `cargo build --locked -p splitshare`: PASS
+  after the final unsupported-retry UI adjustment.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web`:
+  all 42 final Chromium desktop/mobile cases passed before an external SIGTERM
+  interrupted the runner during Firefox.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- --project firefox --project webkit`:
+  PASS — 38 passed, four explicit CDP/clipboard-permission-grant skips. Combined
+  final coverage: 80 passed, four skipped.
+- The earlier bottom-sheet-position assertion ran during its opening animation;
+  it now waits for the final position. Final chooser/confirmation tests pass on
+  all four configurations.
+- `bash scripts/build-release.sh`: PASS with final embedded frontend.
+- `git diff --check`: PASS. Documentation and local Git checkpoint completed.

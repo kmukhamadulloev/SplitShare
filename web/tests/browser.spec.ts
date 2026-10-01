@@ -48,7 +48,7 @@ test('uploads, drag/drop, file/image/text paste and conflict resolution', async 
   const suffix = info.project.name
   await page.goto('/')
   await expect(page.getByText('Connected', { exact: true })).toBeVisible()
-  await page.locator('input[type=file]').setInputFiles([
+  await page.locator('input[type=file][aria-label="Upload files"]').setInputFiles([
     { name: `upload-a-${suffix}.txt`, mimeType: 'text/plain', buffer: Buffer.from('alpha') },
     { name: `upload-b-${suffix}.txt`, mimeType: 'text/plain', buffer: Buffer.from('beta') },
   ])
@@ -89,12 +89,12 @@ test('uploads, drag/drop, file/image/text paste and conflict resolution', async 
     Object.defineProperty(event,'clipboardData',{value:data})
     element.dispatchEvent(event)
   })
-  await expect(page.getByRole('img',{name:'Pasted image preview'})).toBeVisible()
+  await expect(page.getByRole('img',{name:'Image preview'})).toBeVisible()
   await page.getByLabel('Filename',{exact:true}).fill(`image-${suffix}.png`)
   expect((await request.get(`/api/v1/files/download?path=/image-${suffix}.png`)).status()).toBe(404)
-  await page.getByRole('button',{name:'Save file',exact:true}).click()
+  await page.getByRole('button',{name:'Upload',exact:true}).click()
   await expect(page.getByRole('region',{name:'Files',exact:true}).getByText(`image-${suffix}.png`,{exact:true})).toBeVisible()
-  await page.locator('input[type=file]').setInputFiles({name:`upload-a-${suffix}.txt`,mimeType:'text/plain',buffer:Buffer.from('replacement')})
+  await page.locator('input[type=file][aria-label="Upload files"]').setInputFiles({name:`upload-a-${suffix}.txt`,mimeType:'text/plain',buffer:Buffer.from('replacement')})
   await page.getByRole('button',{name:/upload conflicts/}).click()
   await page.getByRole('button',{name:'Resolve conflict',exact:true}).click()
   await expect(page.getByRole('heading',{name:'File already exists'})).toBeVisible()
@@ -104,7 +104,7 @@ test('uploads, drag/drop, file/image/text paste and conflict resolution', async 
   await page.getByRole('button',{name:'Replace',exact:true}).click()
   await expect.poll(async () => (await request.get(`/api/v1/files/download?path=/upload-a-${suffix}.txt`)).text()).toBe('replacement')
   await page.getByRole('button',{name:'Close queue',exact:true}).click()
-  await page.locator('input[type=file]').setInputFiles({name:`upload-a-${suffix}.txt`,mimeType:'text/plain',buffer:Buffer.from('must not replace')})
+  await page.locator('input[type=file][aria-label="Upload files"]').setInputFiles({name:`upload-a-${suffix}.txt`,mimeType:'text/plain',buffer:Buffer.from('must not replace')})
   await page.getByRole('button',{name:/upload conflicts/}).click()
   await page.getByRole('button',{name:'Resolve conflict',exact:true}).click()
   await page.getByRole('button',{name:'Keep existing',exact:true}).click()
@@ -124,7 +124,7 @@ test('cancel an active upload and retry from the beginning', async ({ page, requ
   const cdp = await page.context().newCDPSession(page)
   await cdp.send('Network.enable')
   await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:1024*1024,uploadThroughput:128*1024})
-  await page.locator('input[type=file]').setInputFiles({name,mimeType:'application/octet-stream',buffer:Buffer.alloc(1024*1024,7)})
+  await page.locator('input[type=file][aria-label="Upload files"]').setInputFiles({name,mimeType:'application/octet-stream',buffer:Buffer.alloc(1024*1024,7)})
   await page.getByRole('button',{name:'Open upload queue'}).click()
   await expect.poll(async () => (await (await request.get('/api/v1/transfers')).json() as {path:string;state:string;transferred_bytes:number}[]).some(item => item.path===`/${name}` && item.state==='uploading' && item.transferred_bytes>0)).toBe(true)
   await page.getByRole('button',{name:`Cancel ${name}`,exact:true}).click()

@@ -116,7 +116,7 @@ test('a lost upload response remains unconfirmed until server reconciliation', a
     expect(response.status()).toBe(201)
     await route.abort('connectionfailed')
   })
-  await page.locator('input[type=file]').setInputFiles({name,mimeType:'text/plain',buffer:content})
+  await page.locator('input[type=file][aria-label="Upload files"]').setInputFiles({name,mimeType:'text/plain',buffer:content})
   await page.getByRole('button',{name:'Open upload queue'}).click()
   const row = page.locator('.queue-item').filter({hasText:name})
   await expect(row.locator('.transfer-state')).toHaveText('unconfirmed')
