@@ -292,3 +292,54 @@ Fallback smoke uses port 43128 and deliberately unavailable display addresses,
 then verifies HTTP and graceful signal exit. The ordinary smokes run `--no-tray`.
 Native Windows/macOS menu, clipboard/opener and shutdown smoke must be run on those
 hosts; cross-target compilation does not satisfy that acceptance requirement.
+
+## Phase 08 reliability checks
+
+`bash scripts/check.sh` now runs 57 Rust tests, including real-socket connection
+exhaustion, oversized headers, incomplete-header and control-body deadlines, plus
+paused-time queue/idle upload deadlines. Existing traversal/symlink races, absolute
+path redaction, remote host denial, upload concurrency abuse, disconnect/shutdown
+and SSE limit tests remain part of the full suite.
+
+Build embedded assets and the debug binary before browser checks:
+
+```bash
+cargo build --locked -p splitshare
+npx --prefix web playwright install --with-deps chromium firefox webkit
+SPLITSHARE_BROWSER_MATRIX=1 npm run test:e2e --prefix web
+```
+
+The default browser command runs Chromium desktop/mobile (20 tests). The matrix
+adds Firefox and WebKit desktop (40 cases total). The two non-Chromium variants of
+the CDP-throttled active cancellation test are explicitly skipped; backend and
+Chromium cancellation tests still run. WebKit on Linux is engine coverage, not
+native Safari/iOS evidence. Clipboard tests inject deterministic paste events;
+OS clipboard permissions remain manual. Firefox drops synthetic constructor
+clipboard data, so fixtures define that property explicitly. WebKit route
+interception omits File bytes; the lost-response fixture forwards its exact payload
+to the real server before aborting the response. Normal uploads are independently
+verified across engines.
+
+Directory fixtures contain 10,000 files. Browser checks enforce 100 rendered rows,
+full-snapshot search, cross-page selection and List/Grid paging. Printed local
+load/search timings are measurements, not flaky wall-clock acceptance thresholds.
+Other new cases verify unconfirmed upload responses reconcile to actual publication.
+The existing real-mutation-after-download case catches Firefox SSE interruption;
+links use the native `download` attribute to avoid navigation.
+
+Release checks on Linux:
+
+```bash
+bash scripts/build-release.sh
+python3 scripts/smoke-foundation.py
+python3 scripts/smoke-sessions.py
+python3 scripts/smoke-tray-fallback.py
+python3 scripts/benchmark-reliability.py
+/usr/bin/python3 scripts/smoke-tray-linux.py
+```
+
+The benchmark needs port 43129, Linux `/proc` RSS and roughly 1.1 GiB temporary
+storage; `--large-mib`/`--files` allow smaller development runs but do not replace
+the default 1 GiB/10,000-entry gate. CI runs the full browser engine matrix and this
+benchmark on Linux. Physical-device LAN, native Safari/mobile, OS clipboard/openers
+and Windows/macOS native validation remain separately recorded release follow-ups.

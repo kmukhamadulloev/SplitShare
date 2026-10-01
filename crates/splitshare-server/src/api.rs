@@ -167,6 +167,38 @@ async fn guard_inner(
             return denied();
         }
     }
+    // Metadata is small and has a total read deadline. Raw uploads retain streaming
+    // and their own idle/queue limits; never buffer their bodies here.
+    if request.uri().path() != "/api/v1/uploads"
+        && !matches!(*request.method(), Method::GET | Method::HEAD)
+    {
+        let (parts, body) = request.into_parts();
+        let bytes = match tokio::time::timeout(
+            Duration::from_secs(10),
+            axum::body::to_bytes(body, 16 * 1024),
+        )
+        .await
+        {
+            Ok(Ok(bytes)) => bytes,
+            Ok(Err(_)) => {
+                return ApiError::new(
+                    StatusCode::PAYLOAD_TOO_LARGE,
+                    "CONTROL_BODY_LIMIT",
+                    "Control request body is invalid or exceeds 16 KiB.",
+                )
+                .into_response();
+            }
+            Err(_) => {
+                return ApiError::new(
+                    StatusCode::REQUEST_TIMEOUT,
+                    "CONTROL_BODY_TIMEOUT",
+                    "Control request body did not arrive within 10 seconds.",
+                )
+                .into_response();
+            }
+        };
+        request = Request::from_parts(parts, Body::from(bytes));
+    }
     next.run(request).await
 }
 pub async fn guard(state: State<ServerState>, request: Request, next: Next) -> Response {

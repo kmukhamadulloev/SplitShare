@@ -129,7 +129,9 @@ parallel queue, cancellation/retry and clipboard workflows. Phase 05 adds token
 sessions, remote permissions, persisted host settings and local QR sharing. Phase 06
 adds the responsive production file manager, typed icons, selection actions,
 accessible menus/dialogs and reconnect recovery. Phase 07 adds a native tray and
-Start/Stop/Quit lifecycle (Windows/macOS native smoke pending). See [running and access policy](docs/HTTP_BROWSER.md).
+Start/Stop/Quit lifecycle (Windows/macOS native smoke is user-owned follow-up).
+Phase 08 adds transport deadlines, bounded connections, truthful uncertain-upload
+recovery and measured directory paging. See [running and access policy](docs/HTTP_BROWSER.md).
 See [foundation decisions](docs/FOUNDATION.md). Rust 1.98+ and Node 24+ are required for development.
 
 ```bash

@@ -1,8 +1,8 @@
-# Current Goal — Phase 07 Desktop Tray and Host Lifecycle
+# Current Goal — Phase 08 Reliability, Security and Performance
 
 The active implementation goal is:
 
-`goals/PHASE_07_DESKTOP_TRAY_LIFECYCLE.md`
+`goals/PHASE_08_RELIABILITY_SECURITY_PERFORMANCE.md`
 
 ## Product release program
 
@@ -43,8 +43,12 @@ Future mobile host work may reuse the Rust core through a native library, but cu
 
 ## Latest checkpoint
 
-Phase 07 native tray/lifecycle implementation checkpoint is delivered, with local
-Linux menu and failure-recovery validation. Phase 07 remains active: its mandatory
-native Windows/macOS smoke gate is not yet satisfied. See `docs/TRAY.md` and
-`docs/ACCEPTANCE.md` for evidence and remaining native OS-action checks.
-Phase 08 has not started.
+Phase 08 local implementation and acceptance are complete; see
+[acceptance evidence](docs/ACCEPTANCE.md#phase-08-local-acceptance--2026-10-01).
+Delivered bounded transport/transfer resources, truthful interruption recovery,
+security regressions, measured 1 GiB and directory performance, browser engine
+coverage and CI checks. Phase 09 packaging is next; it has not been started.
+
+Native Windows/macOS validation is user-owned manual follow-up and does not block
+this phase, as authorized on 2026-10-01. Unexecuted native checks remain recorded,
+not marked PASS. Remaining release follow-ups are tracked in ISSUES.md.

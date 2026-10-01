@@ -6,7 +6,7 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 - Decisions and resolved dependency choices: [FOUNDATION.md](docs/FOUNDATION.md).
 - [ ] Run configured native Windows/macOS CI checks; only Linux is locally verified.
-- [ ] Complete Phase 07 native Windows/macOS tray smoke; Linux native menu/lifecycle smoke is implemented.
+- [ ] User-owned follow-up: complete Phase 07 native Windows/macOS tray smoke; Linux native menu/lifecycle smoke is implemented.
 - [ ] Manually validate browser/folder openers and clipboard on each desktop, including Wayland-only Linux.
 - Tray dependency is pinned to 0.24.2 because 0.25.1 requires unavailable `dirs ^7` with libappindicator; see `docs/TRAY.md`.
 
@@ -34,7 +34,7 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 - [ ] Run manual screen-reader checks and native mobile touch/keyboard checks; Phase 06 automated Chromium accessibility and viewport checks are local coverage.
 
-- [ ] Validate Clipboard API behavior on Chromium, Firefox and Safari.
+- [ ] Validate native Clipboard API permissions on Chromium, Firefox and Safari; deterministic paste fixtures cover Chromium/Firefox/WebKit.
 - [ ] Validate multi-file browser download UX; no ZIP generation is planned for v1.
 - [ ] Define preview allowlist by MIME and browser capability.
 
@@ -47,12 +47,23 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 ## Transfers
 
 - [ ] Validate native Windows/macOS upload publication and cancellation at runtime.
-- [ ] Add crash-recovery scavenging for hidden partial files after abrupt process death.
-- [ ] Run 1 GiB and multi-device transfer stress tests for release acceptance.
+- [ ] Run multi-device LAN/VPN transfer stress tests for release acceptance; the Linux 1 GiB upload/download benchmark is automated.
 - Runtime upload limits now update through host-only settings when the transfer queue is idle.
 
 ## Sessions and QR
 
 - [ ] Validate physical-device QR scanning and private LAN/VPN routing across supported hosts.
 - [ ] Validate native Windows/macOS settings replacement and cookie/browser flows at runtime.
-- [ ] Verify clipboard copy and join redirects in Firefox/Safari; Chromium desktop/mobile is locally covered.
+- [ ] Verify native clipboard copy and Safari/iOS join flows; automated redirects/cookies cover Chromium, Firefox and Linux WebKit.
+
+## Reliability / release follow-ups
+
+- [ ] Abrupt-kill partial-file scavenging remains unimplemented; hidden reserved
+  partials are excluded from browser listings but can consume disk until removed
+  by the host. Graceful shutdown/disconnect cleanup is tested.
+- [ ] Directory metadata snapshots scale with entry count. The 10,000-entry case
+  is measured and UI rows are paged; larger directory/server pagination work needs
+  further measurements before claiming support at larger scales.
+- [ ] Native Safari/iOS, physical mobile touch/accessibility, separate-device LAN
+  and OS-action checks remain release gates; Linux browser-engine automation does
+  not substitute for these checks. Windows/macOS native checks are user-owned.

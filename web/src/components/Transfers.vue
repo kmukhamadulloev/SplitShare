@@ -94,7 +94,9 @@ defineExpose({ drop })
       <small>{{ bytes(item.transferred) }} / {{ bytes(item.total) }} <span v-if="item.failure">· {{ item.failure }}</span></small>
       <button v-if="['queued','uploading'].includes(item.state)" class="button" :aria-label="`Cancel ${item.file.name}`" @click="uploads.cancel(item)"><X :size="16" />Cancel</button>
       <button v-if="item.state === 'failed' && item.failure === 'CONFLICT'" class="button" :disabled="!enabled || !!item.controller" @click="showConflict(item)">Resolve conflict</button>
-      <button v-else-if="['failed','cancelled'].includes(item.state)" class="button" :disabled="!enabled || !!item.controller" @click="uploads.retry(item)"><RotateCcw :size="16" />Retry</button>
+      <p v-if="item.state === 'unconfirmed'">The host has not confirmed the outcome. Check the destination before retrying; existing files will require conflict resolution.</p>
+      <button v-if="item.state === 'unconfirmed'" class="button" @click="uploads.refresh()">Check status</button>
+      <button v-if="['failed','cancelled','unconfirmed'].includes(item.state) && item.failure !== 'CONFLICT'" class="button" :disabled="!enabled || !!item.controller" @click="uploads.retry(item)"><RotateCcw :size="16" />Retry</button>
     </div>
     <div class="dialog-actions"><button class="button" @click="uploads.clear()">Clear finished</button><button class="button primary" @click="close(queue)">Close queue</button></div>
   </dialog>

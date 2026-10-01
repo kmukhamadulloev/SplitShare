@@ -1,6 +1,6 @@
 # HTTP API
 
-Phases 03–05 implement file operations, streaming transfers, SSE, token sessions,
+Phases 03–08 implement file operations, streaming transfers, SSE, token sessions,
 remote permissions, host settings and network candidates. Preview remains planned.
 Exact schemas are in [openapi.yaml](openapi.yaml). See [SESSIONS.md](SESSIONS.md)
 for authorization, expiry, revocation and persistence policy.
@@ -166,3 +166,20 @@ Event payloads are typed JSON.
 ## Host locality
 
 `status` may expose `local_client: true|false`, but authorization is computed server-side for every host-only operation.
+
+## Transport limits — Phase 08
+
+The HTTP/1 listener accepts at most 128 simultaneous connections. Excess sockets
+are closed before request tasks are allocated. Request headers must arrive within
+10 seconds, contain at most 64 fields, and fit the 16 KiB application metadata
+budget (request line plus decoded headers). Hyper also has a 32 KiB parser buffer
+setting. Parser rejection may close the socket or return a plain HTTP error;
+parsed oversized metadata returns 431 `HEADER_LIMIT`.
+
+Authorized control/mutation bodies are limited to 16 KiB and a 10-second total
+read deadline: 413 `CONTROL_BODY_LIMIT` or 408 `CONTROL_BODY_TIMEOUT`. These limits
+do not buffer or cap raw upload bodies. Upload queue waits expire after 60 seconds
+with 408 `UPLOAD_QUEUE_TIMEOUT`; input idle periods expire after 60 seconds with
+408 `UPLOAD_IDLE_TIMEOUT`. Both produce failed transfer snapshots without publication.
+A lost response alone does not establish whether publication succeeded; reconcile
+`/transfers` and the destination before explicitly retrying.

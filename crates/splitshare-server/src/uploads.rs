@@ -62,6 +62,16 @@ impl From<TransferError> for ApiError {
                 "TRANSFER_FINALIZING",
                 "The transfer is already finalizing or finished.",
             ),
+            TransferError::QueueTimeout => Self::new(
+                StatusCode::REQUEST_TIMEOUT,
+                "UPLOAD_QUEUE_TIMEOUT",
+                "Upload queue wait expired. Retry when capacity is available.",
+            ),
+            TransferError::IdleTimeout => Self::new(
+                StatusCode::REQUEST_TIMEOUT,
+                "UPLOAD_IDLE_TIMEOUT",
+                "No upload data arrived for 60 seconds. Retry the upload.",
+            ),
             TransferError::Cancelled => Self::new(
                 StatusCode::CONFLICT,
                 "TRANSFER_CANCELLED",

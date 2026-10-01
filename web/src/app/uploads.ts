@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { observeEvents } from './events'
 import { aggregate } from './aggregate'
 export interface Transfer { id: string; path: string; total_bytes: number | null; transferred_bytes: number; state: 'queued' | 'uploading' | 'publishing' | 'completed' | 'failed' | 'cancelled'; bytes_per_second: number | null; eta_seconds: number | null; failure: string | null }
-export interface QueueItem { id: string; key: string; file: File; path: string; state: Transfer['state']; transferred: number; total: number | null; speed: number | null; failure: string | null; policy: 'ask' | 'replace' | 'auto_rename' | 'reject'; controller?: AbortController; sent: boolean }
+export interface QueueItem { id: string; key: string; file: File; path: string; state: Transfer['state'] | 'unconfirmed'; transferred: number; total: number | null; speed: number | null; failure: string | null; policy: 'ask' | 'replace' | 'auto_rename' | 'reject'; controller?: AbortController; sent: boolean }
 function token() { return [...crypto.getRandomValues(new Uint8Array(16))].map(value => value.toString(16).padStart(2,'0')).join('') }
 export const useUploads = defineStore('uploads', () => {
   const items = ref<QueueItem[]>([])
@@ -24,8 +24,17 @@ export const useUploads = defineStore('uploads', () => {
   async function refresh() {
     try {
       const response = await fetch('/api/v1/transfers')
-      if (!response.ok) return
-      for (const transfer of await response.json() as Transfer[]) apply(transfer)
+      if (!response.ok) { problem.value = 'Transfer status is unavailable. Reconnect or check the destination before retrying.'; return }
+      const transfers = await response.json() as Transfer[]
+      problem.value = ''
+      const known = new Set(transfers.map(transfer => transfer.id))
+      for (const transfer of transfers) apply(transfer)
+      for (const item of items.value) {
+        if (item.sent && !item.controller && !known.has(item.id) && ['queued','uploading','publishing'].includes(item.state)) {
+          item.state = 'unconfirmed'; item.failure = 'STATUS_UNKNOWN'; item.speed = null
+        }
+      }
+      return known
     } catch { problem.value = 'Could not refresh transfer status. Reconnecting…' }
   }
   function start(concurrency: number) {
@@ -60,10 +69,12 @@ export const useUploads = defineStore('uploads', () => {
         const body = await response.json()
         if (item.state !== 'completed') { item.state = body.error.code === 'TRANSFER_CANCELLED' ? 'cancelled' : 'failed'; item.failure = body.error.code }
       }
-    } catch (error) {
+    } catch {
       // A lost response is not proof of failure: reconcile server state first.
-      await refresh()
-      if (!['completed','cancelled'].includes(item.state)) { item.state = 'failed'; item.failure = (error as Error).name === 'AbortError' ? 'INTERRUPTED' : 'CONNECTION_LOST' }
+      const known = await refresh()
+      if (!known?.has(item.id) && !['completed','cancelled'].includes(item.state)) {
+        item.state = 'unconfirmed'; item.failure = 'STATUS_UNKNOWN'; item.speed = null
+      }
     } finally { item.controller = undefined; inflight--; pump() }
   }
   async function cancel(item: QueueItem) {
@@ -76,7 +87,8 @@ export const useUploads = defineStore('uploads', () => {
     } catch { problem.value = 'Cancellation could not be confirmed. Check the connection and retry.' }
   }
   function retry(item: QueueItem, policy: QueueItem['policy'] = item.policy) {
-    if (!enabled.value || item.controller || !['failed','cancelled'].includes(item.state)) return
+    if (!enabled.value || item.controller || !['failed','cancelled','unconfirmed'].includes(item.state)) return
+    if (item.state === 'unconfirmed') policy = 'ask' // Never overwrite after an uncertain response.
     item.id = token(); item.key = token(); item.transferred = 0; item.failure = null; item.speed = null; item.state = 'queued'; item.policy = policy; item.sent = false
     pump()
   }
@@ -87,5 +99,5 @@ export const useUploads = defineStore('uploads', () => {
   }
   function keepExisting(item: QueueItem) { if (item.state === 'failed' && item.failure === 'CONFLICT') { item.state = 'cancelled'; item.failure = null } }
   function clear() { items.value = items.value.filter(item => !['completed','failed','cancelled'].includes(item.state) || item.controller) }
-  return { items, progress, speed, eta, limit, problem, start, stop, setEnabled, enqueue, cancel, retry, keepExisting, clear }
+  return { items, progress, speed, eta, limit, problem, start, stop, setEnabled, enqueue, cancel, retry, keepExisting, clear, refresh }
 })

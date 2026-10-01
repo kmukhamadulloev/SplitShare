@@ -23,6 +23,9 @@ serde_json.workspace = true
 tracing.workspace = true
 futures-util.workspace = true
 
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio", "service"] }
+
 [dev-dependencies]
 splitshare-storage = { path = "../splitshare-storage" }
 tempfile.workspace = true

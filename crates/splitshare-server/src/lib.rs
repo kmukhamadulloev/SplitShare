@@ -10,6 +10,7 @@ mod access;
 mod api;
 mod error;
 mod range;
+mod transport;
 mod uploads;
 pub use api::ServerState;
 use tokio::net::TcpListener;
@@ -127,16 +128,9 @@ pub fn api_router(state: ServerState) -> Router {
 
 /// The composition root owns cancellation; SSE and file streams share this token.
 pub async fn serve(listener: TcpListener, shutdown: CancellationToken) -> std::io::Result<()> {
-    axum::serve(listener, router())
-        .with_graceful_shutdown(shutdown.cancelled_owned())
-        .await
+    transport::serve(listener, router(), shutdown).await
 }
 pub async fn serve_api(listener: TcpListener, state: ServerState) -> std::io::Result<()> {
     let shutdown = state.shutdown.clone();
-    axum::serve(
-        listener,
-        api_router(state).into_make_service_with_connect_info::<std::net::SocketAddr>(),
-    )
-    .with_graceful_shutdown(shutdown.cancelled_owned())
-    .await
+    transport::serve(listener, api_router(state), shutdown).await
 }

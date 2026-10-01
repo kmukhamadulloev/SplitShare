@@ -187,3 +187,20 @@ online events trigger a connection attempt, never a premature Connected state.
 Request cancellation and revision checks prevent older listings from replacing a
 newer navigation. Initial failure has a working Refresh path; session-required,
 permission-disabled, empty, loading and failure states are explicit.
+
+## Phase 08 measured directory behavior
+
+A 10,000-entry local directory took about 7.8 seconds to render and 1.4 seconds to
+search when every row was mounted. The backend listing took about 44 ms and
+returned 1.16 MB, so this phase uses client-side pages of 100 entries rather than
+virtual scrolling or an API pagination change. Search covers the full snapshot,
+resets to page one, and works in List/Grid modes. Selection persists across pages;
+Select all visible items affects the current page. Page count is clamped after
+refresh/deletion. This bounds rendered rows, not directory metadata memory;
+substantially larger directories still require measurement before release claims.
+
+Lost upload responses show an explicit unconfirmed state until server reconciliation;
+see [TRANSFERS.md](TRANSFERS.md#phase-08-interruption-policy).
+
+Download anchors explicitly use `download`, including row/menu/selected-file links,
+so Firefox does not treat the request as navigation and interrupt live SSE updates.

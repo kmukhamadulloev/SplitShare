@@ -16,8 +16,13 @@ const grid = ref(false)
 const search = ref('')
 const selected = ref<string[]>([])
 const visible = computed(() => files.entries.filter(entry => entry.name.toLocaleLowerCase().includes(search.value.toLocaleLowerCase())))
+const page = ref(1)
+const fileArea = ref<HTMLElement>()
+const pageSize = 100
+const pageCount = computed(() => Math.max(1, Math.ceil(visible.value.length / pageSize)))
+const pageEntries = computed(() => visible.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 const selection = computed(() => files.entries.filter(entry => selected.value.includes(entry.path)))
-const allSelected = computed(() => visible.value.length > 0 && visible.value.every(entry => selected.value.includes(entry.path)))
+const allSelected = computed(() => pageEntries.value.length > 0 && pageEntries.value.every(entry => selected.value.includes(entry.path)))
 const crumbs = computed(() => [{name:'Shared folder',path:'/'}, ...files.path.split('/').filter(Boolean).map((name,index,parts) => ({name,path:'/'+parts.slice(0,index+1).join('/')}))])
 const dialog = ref<HTMLDialogElement>()
 const downloads = ref<HTMLDialogElement>()
@@ -35,7 +40,7 @@ const confirmation = computed(() => action.value === 'delete-selected' ? 'DELETE
 const allPermissions = computed(() => files.status && Object.values(files.status.permissions).every(Boolean))
 function context(event: MouseEvent | KeyboardEvent, entry: FileEntry) { void actions.value?.open(entry,event) }
 function toggleAll() {
-  selected.value = allSelected.value ? selected.value.filter(path => !visible.value.some(entry => entry.path === path)) : [...new Set([...selected.value,...visible.value.map(entry => entry.path)])]
+  selected.value = allSelected.value ? selected.value.filter(path => !pageEntries.value.some(entry => entry.path === path)) : [...new Set([...selected.value,...pageEntries.value.map(entry => entry.path)])]
 }
 async function open(kind: typeof action.value, entry?: FileEntry) {
   action.value = kind; targets.value = kind === 'delete-selected' ? [...selection.value] : entry ? [entry] : []
@@ -68,8 +73,11 @@ function dragEnter(event: DragEvent) { if (!files.status?.permissions.upload || 
 function dragLeave() { if (--dragDepth <= 0) { dragDepth = 0; dragging.value = false } }
 function drop(event: DragEvent) { dragging.value = false; dragDepth = 0; transfers.value?.drop(event) }
 function modified(value: number | null) { return value === null ? '—' : new Date(value*1000).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}) }
-watch(() => files.path, () => { actions.value?.close(); selected.value = []; search.value = '' })
+watch(() => files.path, () => { actions.value?.close(); selected.value = []; search.value = ''; page.value = 1 })
 watch(() => files.entries, entries => { selected.value = selected.value.filter(path => entries.some(entry => entry.path === path)) })
+watch(search, () => { page.value = 1 })
+watch(page, () => { fileArea.value?.scrollTo({top:0}) })
+watch(pageCount, count => { page.value = Math.min(page.value, count) })
 onMounted(() => { void files.start() })
 onUnmounted(() => { files.stop(); closeDialog(dialog.value); closeDialog(downloads.value) })
 </script>
@@ -97,7 +105,7 @@ onUnmounted(() => { files.stop(); closeDialog(dialog.value); closeDialog(downloa
     <div v-if="selected.length" class="selection-bar" role="region" aria-label="Selected items"><span>{{ selected.length }} selected</span><button class="button" :disabled="!files.status?.permissions.download || !selection.some(entry => entry.kind === 'file')" @click="showDialog(downloads)"><Download :size="16" />Download selected</button><button class="button danger-text" :disabled="!files.status?.permissions.delete" @click="open('delete-selected')"><Trash2 :size="16" />Delete selected</button><button class="icon-btn" aria-label="Clear selection" @click="selected = []"><X :size="17" /></button></div>
     <div v-if="!files.connected && files.initialized && files.status?.sharing && !files.sessionRequired" class="connection-notice" role="status"><WifiOff :size="17" />Connection interrupted. Reconnecting to the host…</div>
     <div v-if="files.error" class="error-banner" role="alert"><ShieldAlert :size="18" /><span>{{ files.error }}</span><button class="button" :disabled="files.refreshing" @click="files.refresh()">Try again</button></div>
-    <section class="file-area" :aria-busy="files.loading || !files.initialized" aria-label="Files">
+    <section ref="fileArea" class="file-area" :aria-busy="files.loading || !files.initialized" aria-label="Files">
       <div v-if="!files.initialized || (files.loading && !files.entries.length)" class="empty" role="status"><LoaderCircle class="spinning" :size="28" /><h2>Loading files…</h2><p>Reading the shared folder.</p></div>
       <div v-else-if="files.sessionRequired" class="empty"><ShieldAlert :size="36" /><h2>Share link required</h2><p>Open a current link or scan a QR code from the host to connect.</p></div>
       <div v-else-if="!files.status" class="empty"><WifiOff :size="36" /><h2>Host unavailable</h2><p>Keep this page open to reconnect, or try Refresh.</p></div>
@@ -106,18 +114,23 @@ onUnmounted(() => { files.stop(); closeDialog(dialog.value); closeDialog(downloa
       <div v-else-if="files.error" class="empty"><FolderOpen :size="36" /><h2>Folder unavailable</h2><p>Try again or choose a parent folder from the breadcrumb.</p></div>
       <div v-else-if="!visible.length" class="empty"><Search v-if="search" :size="36" /><FolderOpen v-else :size="36" /><h2>{{ search ? 'No matching files' : 'No files to show' }}</h2><p>{{ search ? 'Try a different name or clear your search.' : 'Files added to this folder will appear here.' }}</p><button v-if="search" class="button" @click="search = ''">Clear search</button></div>
       <div v-else class="file-results">
-        <div v-if="!grid" class="list-heading" role="presentation"><input type="checkbox" aria-label="Select all visible items" :checked="allSelected" :indeterminate="selected.length > 0 && !allSelected" @change="toggleAll" /><span>Name</span><span>Size</span><span>Modified</span><span class="actions-heading">Actions</span></div>
+        <div v-if="!grid" class="list-heading" role="presentation"><input type="checkbox" aria-label="Select all visible items" :checked="allSelected" :indeterminate="pageEntries.some(entry => selected.includes(entry.path)) && !allSelected" @change="toggleAll" /><span>Name</span><span>Size</span><span>Modified</span><span class="actions-heading">Actions</span></div>
         <div :class="grid ? 'file-grid' : 'file-list'" role="list" aria-label="Folder contents">
-        <article v-for="entry in visible" :key="entry.path" class="file-item" :class="{selected:selected.includes(entry.path)}" role="listitem" tabindex="0" :aria-label="entry.name" @contextmenu="context($event,entry)" @keydown="fileKey($event,entry)">
+        <article v-for="entry in pageEntries" :key="entry.path" class="file-item" :class="{selected:selected.includes(entry.path)}" role="listitem" tabindex="0" :aria-label="entry.name" @contextmenu="context($event,entry)" @keydown="fileKey($event,entry)">
           <input v-model="selected" class="item-select" type="checkbox" :value="entry.path" :aria-label="`Select ${entry.name}`" />
           <FileIcon :name="entry.name" :kind="entry.kind" />
           <div class="file-detail"><button v-if="entry.kind === 'directory'" class="file-name" :title="entry.name" @click="files.load(entry.path)">{{ entry.name }}</button><span v-else class="file-name" :title="entry.name">{{ entry.name }}</span><small>{{ typeLabels[fileCategory(entry.name,entry.kind)] }}<span v-if="entry.kind === 'file'" class="mobile-meta"> · {{ formatBytes(entry.size) }}</span></small></div>
           <span class="file-size">{{ entry.kind === 'directory' ? '—' : formatBytes(entry.size) }}</span><time class="modified" :datetime="entry.modified_unix_seconds === null ? undefined : new Date(entry.modified_unix_seconds*1000).toISOString()">{{ modified(entry.modified_unix_seconds) }}</time>
-          <div class="file-actions"><a v-if="entry.kind === 'file' && files.status?.permissions.download" :href="downloadUrl(entry.path)" class="icon-btn download-action" :aria-label="`Download ${entry.name}`"><Download :size="18" /></a><button class="icon-btn" :aria-label="`Actions for ${entry.name}`" @click="context($event,entry)"><MoreHorizontal :size="19" /></button></div>
+          <div class="file-actions"><a v-if="entry.kind === 'file' && files.status?.permissions.download" :href="downloadUrl(entry.path)" download class="icon-btn download-action" :aria-label="`Download ${entry.name}`"><Download :size="18" /></a><button class="icon-btn" :aria-label="`Actions for ${entry.name}`" @click="context($event,entry)"><MoreHorizontal :size="19" /></button></div>
         </article>
         </div>
       </div>
     </section>
+    <nav v-if="pageCount > 1 && !files.error" class="pagination" aria-label="File pages">
+      <button class="button" :disabled="page === 1" @click="page--">Previous page</button>
+      <span aria-live="polite">{{ page }} / {{ pageCount }}</span>
+      <button class="button" :disabled="page === pageCount" @click="page++">Next page</button>
+    </nav>
     <div id="transfer-footer"></div>
     <footer class="statusbar"><span>{{ search ? `${visible.length} of ${files.entries.length}` : files.entries.length }} items</span><span>{{ files.status?.root_label ?? 'Shared folder' }} · Trusted private network</span></footer>
     <div v-if="dragging" class="drop-overlay" aria-hidden="true"><FolderPlus :size="42" /><strong>Drop files to upload</strong><span>{{ files.path }}</span></div>
@@ -128,6 +141,6 @@ onUnmounted(() => { files.stop(); closeDialog(dialog.value); closeDialog(downloa
         <p v-if="modalError" role="alert" class="error">{{ modalError }}</p><div class="dialog-actions"><button type="button" class="button" :disabled="busy" @click="close">Cancel</button><button class="button" :class="deleteAction ? 'danger' : 'primary'" :disabled="busy">{{ busy ? 'Saving…' : deleteAction ? 'Delete' : 'Save' }}</button></div>
       </form>
     </dialog>
-    <dialog ref="downloads" aria-label="Selected downloads" @cancel.prevent="closeDialog(downloads)"><h2>Download selected files</h2><p>Choose a file to download. Folders are not packaged into an archive.</p><div class="selected-downloads"><a v-for="entry in selection.filter(entry => entry.kind === 'file')" :key="entry.path" :href="downloadUrl(entry.path)" class="button"><Download :size="17" />{{ entry.name }}</a></div><div class="dialog-actions"><button class="button primary" @click="closeDialog(downloads)">Done</button></div></dialog>
+    <dialog ref="downloads" aria-label="Selected downloads" @cancel.prevent="closeDialog(downloads)"><h2>Download selected files</h2><p>Choose a file to download. Folders are not packaged into an archive.</p><div class="selected-downloads"><a v-for="entry in selection.filter(entry => entry.kind === 'file')" :key="entry.path" :href="downloadUrl(entry.path)" download class="button"><Download :size="17" />{{ entry.name }}</a></div><div class="dialog-actions"><button class="button primary" @click="closeDialog(downloads)">Done</button></div></dialog>
   </main>
 </template>

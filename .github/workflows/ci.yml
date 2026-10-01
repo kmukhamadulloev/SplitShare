@@ -30,10 +30,12 @@ jobs:
       - if: runner.os == 'Linux'
         run: python3 scripts/smoke-sessions.py
       - if: runner.os == 'Linux'
-        run: python3 scripts/test-upload-memory.py
+        run: python3 scripts/benchmark-reliability.py
       - if: runner.os == 'Linux'
         run: cargo build --locked -p splitshare
       - if: runner.os == 'Linux'
-        run: npx --prefix web playwright install --with-deps chromium
+        run: npx --prefix web playwright install --with-deps chromium firefox webkit
       - if: runner.os == 'Linux'
         run: npm run test:e2e --prefix web
+        env:
+          SPLITSHARE_BROWSER_MATRIX: '1'

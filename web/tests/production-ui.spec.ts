@@ -98,3 +98,30 @@ test('initial failure and network reconnect converge to real server state', asyn
   await expect(page.getByRole('button',{name,exact:true})).toBeVisible({timeout:15000})
   await expect(page.getByText('Connected',{exact:true})).toBeVisible()
 })
+
+test('a lost upload response remains unconfirmed until server reconciliation', async ({page,request},info) => {
+  await page.goto('/')
+  await expect(page.getByText('Connected',{exact:true})).toBeVisible()
+  const name = `uncertain-${info.project.name}.txt`
+  const content = Buffer.from('published despite lost response')
+  // Suppress just this attempt's live events to exercise the ambiguous response path.
+  await page.context().setOffline(true)
+  await expect(page.getByText('Offline',{exact:true})).toBeVisible()
+  await page.route('**/api/v1/events',route => route.abort())
+  await page.route('**/api/v1/transfers',route => route.abort())
+  await page.context().setOffline(false)
+  await page.route('**/api/v1/uploads?**',async route => {
+    // WebKit interception omits File bodies; forward the exact fixture bytes.
+    const response = await route.fetch({postData:content})
+    expect(response.status()).toBe(201)
+    await route.abort('connectionfailed')
+  })
+  await page.locator('input[type=file]').setInputFiles({name,mimeType:'text/plain',buffer:content})
+  await page.getByRole('button',{name:'Open upload queue'}).click()
+  const row = page.locator('.queue-item').filter({hasText:name})
+  await expect(row.locator('.transfer-state')).toHaveText('unconfirmed')
+  expect(await (await request.get(`/api/v1/files/download?path=/${name}`)).text()).toBe('published despite lost response')
+  await page.unroute('**/api/v1/transfers')
+  await row.getByRole('button',{name:'Check status'}).click()
+  await expect(row.locator('.transfer-state')).toHaveText('completed')
+})

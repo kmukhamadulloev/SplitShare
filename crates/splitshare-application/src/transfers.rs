@@ -21,6 +21,8 @@ pub enum TransferError {
     Forbidden,
     TooLate,
     Cancelled,
+    QueueTimeout,
+    IdleTimeout,
     Storage(StorageError),
 }
 impl From<StorageError> for TransferError {
@@ -69,6 +71,7 @@ enum Message {
     Data(Vec<u8>),
     Finish,
     Failed,
+    IdleTimeout,
 }
 struct DisconnectGuard {
     manager: TransferManager,
@@ -287,7 +290,14 @@ impl TransferManager {
         };
         let permit = tokio::select! {
             _ = cancel.cancelled() => { self.update(&request.id,TransferState::Cancelled,0,None,None,true); return Err(TransferError::Cancelled); },
-            permit = self.0.slots.clone().acquire_owned() => permit.map_err(|_| TransferError::Cancelled)?,
+            permit = tokio::time::timeout(Duration::from_secs(60),self.0.slots.clone().acquire_owned()) => match permit {
+                Ok(permit) => permit.map_err(|_| TransferError::Cancelled)?,
+                Err(_) => {
+                    self.update(&request.id,TransferState::Failed,0,None,Some("UPLOAD_QUEUE_TIMEOUT"),true);
+                    tracing::warn!("Upload queue wait exceeded 60 seconds; retry when capacity is available");
+                    return Err(TransferError::QueueTimeout);
+                }
+            },
         };
         let (sender, mut receiver) = mpsc::channel::<Message>(2);
         let manager = self.clone();
@@ -330,6 +340,7 @@ impl TransferManager {
                             }
                         }
                         Some(Message::Finish) => break,
+                        Some(Message::IdleTimeout) => return Err(TransferError::IdleTimeout),
                         Some(Message::Failed) => {
                             return Err(TransferError::Storage(StorageError::UploadFailed));
                         }
@@ -385,8 +396,13 @@ impl TransferManager {
                     let failure = match error {
                         TransferError::Storage(StorageError::Conflict) => "CONFLICT",
                         TransferError::Storage(StorageError::LengthMismatch) => "LENGTH_MISMATCH",
+                        TransferError::IdleTimeout => "UPLOAD_IDLE_TIMEOUT",
                         _ => "UPLOAD_FAILED",
                     };
+                    tracing::warn!(
+                        failure,
+                        "Upload did not publish; inspect connection, destination capacity or conflict policy"
+                    );
                     manager.update(
                         &id,
                         if error == TransferError::Cancelled {
@@ -421,6 +437,7 @@ impl TransferManager {
                     continue;
                 }
                 Ok(None) => Message::Finish,
+                Err(_) => Message::IdleTimeout,
                 _ => Message::Failed,
             };
             tokio::select! { _ = cancel.cancelled() => {}, _ = sender.send(message) => {} }
@@ -447,5 +464,75 @@ impl TransferManager {
                 Err(TransferError::Storage(StorageError::Io))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod deadline_tests {
+    use super::*;
+    fn setup() -> (tempfile::TempDir, TransferManager) {
+        let root = tempfile::tempdir().unwrap();
+        let files = FileService::new(splitshare_storage::Storage::open(root.path()).unwrap());
+        let manager =
+            TransferManager::new(files, &HostSettings::default(), CancellationToken::new())
+                .unwrap();
+        (root, manager)
+    }
+    fn request() -> UploadRequest {
+        UploadRequest {
+            id: "1".repeat(32),
+            key: "2".repeat(32),
+            path: VirtualPath::try_from("/deadline.bin").unwrap(),
+            total: None,
+            policy: ConflictPolicy::Reject,
+        }
+    }
+    #[tokio::test(start_paused = true)]
+    async fn queued_requests_expire_without_consuming_a_body_or_slot() {
+        let (root, manager) = setup();
+        let permit = manager.0.slots.clone().acquire_owned().await.unwrap();
+        let copy = manager.clone();
+        let task = tokio::spawn(async move {
+            copy.upload(
+                request(),
+                futures_util::stream::pending::<Result<Vec<u8>, io::Error>>(),
+            )
+            .await
+        });
+        tokio::task::yield_now().await;
+        tokio::time::advance(Duration::from_secs(61)).await;
+        assert!(matches!(
+            task.await.unwrap(),
+            Err(TransferError::QueueTimeout)
+        ));
+        let snapshot = manager.snapshot();
+        assert_eq!(snapshot[0].state, TransferState::Failed);
+        assert_eq!(snapshot[0].failure, Some("UPLOAD_QUEUE_TIMEOUT"));
+        assert_eq!(snapshot[0].transferred_bytes, 0);
+        assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+        drop(permit);
+        assert_eq!(manager.0.slots.available_permits(), 1);
+    }
+    #[tokio::test(start_paused = true)]
+    async fn idle_requests_fail_truthfully_and_release_the_worker() {
+        let (root, manager) = setup();
+        let copy = manager.clone();
+        let task = tokio::spawn(async move {
+            copy.upload(
+                request(),
+                futures_util::stream::pending::<Result<Vec<u8>, io::Error>>(),
+            )
+            .await
+        });
+        tokio::task::yield_now().await;
+        tokio::time::advance(Duration::from_secs(61)).await;
+        assert!(matches!(
+            task.await.unwrap(),
+            Err(TransferError::IdleTimeout)
+        ));
+        assert_eq!(manager.snapshot()[0].failure, Some("UPLOAD_IDLE_TIMEOUT"));
+        assert_eq!(manager.snapshot()[0].state, TransferState::Failed);
+        assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+        assert_eq!(manager.0.slots.available_permits(), 1);
     }
 }

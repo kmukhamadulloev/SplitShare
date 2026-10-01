@@ -2,10 +2,15 @@ openapi: 3.1.0
 info:
   title: SplitShare API
   version: 0.1.0
-  description: Phases 03–05 implemented contract. Trusted local/private networks only.
+  description: Phases 03–08 implemented contract. Trusted local/private networks only.
     Remote token-mode clients require a session cookie; Open LAN retains capability
     checks. Host control uses actual socket-peer classification. See SESSIONS.md.
-    Preview is not implemented.
+    Preview is not implemented. HTTP/1 supports 128 connections, 64 header fields,
+    a 16 KiB parsed request metadata budget and a 10-second header deadline.
+    Parser errors may close the socket or return non-JSON HTTP errors.
+    Control bodies have a 16 KiB limit and a 10-second deadline (413 CONTROL_BODY_LIMIT,
+    408 CONTROL_BODY_TIMEOUT). Raw upload queue/idle deadlines are 60 seconds
+    (408 UPLOAD_QUEUE_TIMEOUT or UPLOAD_IDLE_TIMEOUT). See API.md.
 servers:
 - url: /
 paths:
@@ -13,6 +18,8 @@ paths:
     get:
       summary: Read actual share state and socket-peer locality
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
         '200':
           description: Current state
           content:
@@ -29,6 +36,8 @@ paths:
       parameters:
       - $ref: '#/components/parameters/Path'
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
         '200':
           description: Real storage listing
           content:
@@ -72,6 +81,10 @@ paths:
                 path:
                   $ref: '#/components/schemas/VirtualPath'
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
         '204':
           description: Deleted
         '400':
@@ -110,6 +123,10 @@ paths:
                   type: string
                   description: Single validated filename component
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
         '201':
           description: Created
           content:
@@ -154,6 +171,10 @@ paths:
                 to:
                   $ref: '#/components/schemas/VirtualPath'
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
         '204':
           description: Renamed
         '400':
@@ -189,6 +210,8 @@ paths:
         description: Validators are not issued; requests with If-Range receive the
           complete representation.
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
         '200':
           description: Full file, Content-Length and Accept-Ranges bytes
           content:
@@ -224,6 +247,8 @@ paths:
     head:
       summary: File response headers without body; Range is ignored
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
         '200':
           description: Full representation headers
         '400':
@@ -248,6 +273,8 @@ paths:
         session.permissions_changed carries {} and closes the stream on policy change,
         revocation or expiry; refresh status and reconnect.
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
         '200':
           description: SSE stream
           content:
@@ -294,6 +321,10 @@ paths:
               type: string
               format: binary
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
         '201':
           description: Published successfully
           content:
@@ -322,6 +353,8 @@ paths:
     get:
       summary: Read bounded server-authoritative transfer history
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
         '200':
           description: Current snapshots without cancellation keys
           content:
@@ -349,6 +382,12 @@ paths:
         schema:
           type: string
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
         '202':
           description: Cancellation requested; observe terminal snapshot for cleanup
             completion
@@ -376,6 +415,8 @@ paths:
           type: string
         description: 256-bit lowercase hex share token from a host-selected join URL.
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
         '303':
           description: Joined; no-store and no-referrer
           headers:
@@ -405,6 +446,12 @@ paths:
       parameters:
       - $ref: '#/components/parameters/MutationHeader'
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
         '204':
           description: Session revoked; Set-Cookie expires splitshare_session
         '403':
@@ -413,6 +460,8 @@ paths:
     get:
       summary: Read host settings (local socket peer only)
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
         '200':
           description: Current effective settings
           content:
@@ -436,6 +485,10 @@ paths:
             schema:
               $ref: '#/components/schemas/HostSettings'
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
         '200':
           description: Saved settings
           content:
@@ -460,6 +513,8 @@ paths:
     get:
       summary: List selectable IPv4 join URLs (local socket peer only)
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
         '200':
           description: Ranked compatible candidates; host chooses a reachable address
           content:
@@ -475,6 +530,12 @@ paths:
       parameters:
       - $ref: '#/components/parameters/MutationHeader'
       responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
         '204':
           description: Old token and cookies invalidated; fetch new host network URLs
         '403':

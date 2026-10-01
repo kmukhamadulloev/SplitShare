@@ -50,7 +50,7 @@ This file accumulates verified release evidence.
 - [x] Real Axum TCP integration tests with temporary filesystems.
 - [x] SSE mutation events, connection limit and shutdown tested.
 - [x] Host/Origin/body-limit and peer-forgery regressions pass.
-- [ ] Upload HTTP streaming (Phase 04).
+- [x] Upload HTTP streaming (implemented in Phase 04).
 - [ ] Native Windows/macOS runtime and separate-device LAN validation.
 
 ### Phase 03 exact checks — 2026-09-30
@@ -72,49 +72,49 @@ This file accumulates verified release evidence.
 
 ## Security/session
 
-- [ ] Token join.
-- [ ] Token rotation.
-- [ ] Open LAN optional mode.
-- [ ] Host settings remote denial.
-- [ ] Token not leaked in logs.
+- [x] Token join.
+- [x] Token rotation.
+- [x] Open LAN optional mode.
+- [x] Host settings remote denial.
+- [x] Token not leaked in logs.
 
 ## UI
 
-- [ ] Full-screen layout.
-- [ ] List/Grid.
-- [ ] Search.
-- [ ] Desktop context menu.
-- [ ] Mobile action sheet.
-- [ ] Paste.
-- [ ] Create/rename/delete.
-- [ ] QR.
-- [ ] Settings.
-- [ ] aggregate transfer progress.
-- [ ] queue.
-- [ ] reduced-motion behavior.
+- [x] Full-screen layout.
+- [x] List/Grid.
+- [x] Search.
+- [x] Desktop context menu.
+- [x] Mobile action sheet.
+- [x] Paste.
+- [x] Create/rename/delete.
+- [x] QR.
+- [x] Settings.
+- [x] aggregate transfer progress.
+- [x] queue.
+- [x] reduced-motion behavior.
 
 ## Native
 
 - [ ] Windows tray.
-- [ ] Linux tray.
+- [x] Linux tray.
 - [ ] macOS tray.
-- [ ] graceful quit.
+- [x] Linux graceful quit; native Windows/macOS verification remains user-owned.
 - [ ] open browser/folder.
 - [ ] release icon.
 
 ## Performance
 
-- [ ] Large upload bounded memory.
-- [ ] Large download bounded memory.
-- [ ] configured concurrency enforced.
-- [ ] many-file directory remains usable.
+- [x] Large upload bounded memory.
+- [x] Large download bounded memory.
+- [x] configured concurrency enforced.
+- [x] many-file directory remains usable.
 
 ## Packaging
 
 - [ ] Windows archive startup.
 - [ ] Linux archive startup.
 - [ ] macOS package startup.
-- [ ] embedded frontend works without Node.
+- [x] embedded frontend works without Node.
 
 ## Phase 04 local acceptance — 2026-09-30
 
@@ -214,7 +214,7 @@ stress/packaging gates remain pending in ISSUES.md. This is local phase acceptan
 | No custom tray dashboard | PASS | Native menu only; no window/webview; settings use local Vue UI |
 | Quit cleans/cancels active uploads safely | PASS locally | Real Linux native Quit during unfinished upload; composition-root Stop cancellation and cleanup tests |
 | Tray failure does not corrupt server operation | PASS locally | Deliberately unavailable display leaves HTTP usable and exits gracefully on SIGTERM |
-| Native smoke tests recorded for all release platforms | FAIL — pending | Linux recorded; native Windows/macOS execution unavailable here; phase remains open |
+| Native smoke tests recorded for all release platforms | FAIL — pending | Linux recorded; native Windows/macOS execution is user-owned manual follow-up per 2026-10-01 instruction |
 
 All commands below passed for this checkpoint:
 
@@ -234,8 +234,70 @@ All commands below passed for this checkpoint:
 No HTTP contract changed. Settings deep-link entry remains guarded by actual
 server-reported host locality; all backend host authorization remains enforced.
 The native platform smoke matrix and remaining manual OS-action checks are in
-`docs/TRAY.md`. Phase 08 is not started.
+`docs/TRAY.md`. The user subsequently authorized Phase 08 and took ownership of native Windows/macOS checks.
 
 Checkpoint upload memory regression: `python3 scripts/test-upload-memory.py` PASS,
 8 MiB / 256 MiB uploads at 15.61 / 15.85 MiB peak RSS before the final opener-only
 error-reporting adjustment.
+
+## Phase 08 local acceptance — 2026-10-01
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| No known root escape | PASS locally | Full Linux traversal, encoded-path, symlink race/root-boundary regressions; native Windows/macOS execution remains user-owned |
+| No known absolute-path leak | PASS | DTO/HTTP redaction tests, safe transport errors, token/log/config smoke |
+| Bounded memory for large files | PASS | Generated 8 MiB / 10 MiB / 1 GiB upload and download; peak RSS 14.34 / 14.55 / 14.88 MiB |
+| Bounded concurrency under hostile clients | PASS | Real 128-connection saturation, backend worker limits, bounded history/download/SSE, header/body/queue/idle deadlines |
+| Interrupted transfers remain truthful | PASS | Disconnect/cancel/shutdown cleanup, timeout snapshots, lost-response unconfirmed state and reconciliation across browser engines |
+| Mandatory browser/native matrix passes or release blockers are recorded | PASS with recorded follow-ups | 38 browser cases pass, two CDP-only cases N/A outside Chromium; Linux tray/fallback pass; native Windows/macOS user-owned, Safari/iOS and physical-device gates in ISSUES.md |
+
+Exact checks:
+
+- `bash scripts/check.sh`: PASS — frontend typecheck, two unit test files, Vite
+  production build, Rust format, Clippy with warnings denied and all 57 Rust tests.
+- After the final TCP latency adjustment: `cargo fmt --check`,
+  `cargo clippy --locked --workspace --all-targets -- -D warnings` and
+  `cargo test --locked --workspace`: PASS again (57 tests).
+- `cargo build --locked -p splitshare`: PASS.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web`:
+  PASS, 38 tests; two explicitly skipped CDP throttling variants. Chromium desktop
+  and Pixel viewport, Firefox desktop and Linux WebKit desktop all exercised.
+- The same matrix with `-- --grep 'browse, mutate|lost upload response'` rechecks
+  eight HTTP/download/SSE/reconciliation workflows after the final TCP adjustment:
+  PASS, all eight.
+- `bash scripts/build-release.sh`: PASS.
+- `python3 scripts/smoke-foundation.py`: PASS — embedded standalone startup,
+  API isolation, safe configuration, log redaction and SIGTERM.
+- `python3 scripts/smoke-sessions.py`: PASS — persisted settings/restart, token
+  regeneration, cookie redirects and secret redaction.
+- `python3 scripts/smoke-tray-fallback.py`: PASS — unavailable-display recovery.
+- `/usr/bin/python3 scripts/smoke-tray-linux.py`: PASS — native menu, Stop/Start,
+  fresh link and Quit during an upload with cleanup.
+- `python3 scripts/benchmark-reliability.py`: PASS — deterministic generated
+  transfer bytes, bounded RSS, 100 small file round trips and 10,000-entry listing.
+- OpenAPI YAML/local references and `git diff --check`: PASS.
+
+Measured Linux results (local temporary filesystem, not network throughput claims):
+
+| Workload | Result |
+|---|---|
+| 1 GiB upload / download | 0.739 s / 0.576 s; peak server RSS 14.88 MiB |
+| 100 small-file uploads plus downloads | 0.187 s, down from 4.288 s before TCP_NODELAY |
+| 10,000-entry API directory listing | 40 ms; 1,160,028 response bytes; server RSS 25.12 MiB |
+| Chromium desktop / mobile directory render | 416 / 467 ms with 100 rows; previously about 7.8 s with 10,000 rows |
+| Chromium desktop / mobile full-directory search | 50 / 44 ms; previously about 1.4 s |
+| Firefox / WebKit directory render | 575 / 676 ms; search 72 / 151 ms |
+
+Pagination is client-side because measured cost was DOM rendering, not listing.
+Directory metadata still scales with entry count; larger directories need further
+measurement. TCP_NODELAY avoids delayed-ACK stalls on small responses and SSE.
+
+Local WebKit needed Ubuntu `libavif16`, `libgav1-1` and `libyuv0`; packages were
+extracted to a temporary directory and their three libraries supplied to the
+Playwright browser cache, without system installation. CI uses Playwright's normal
+`--with-deps` installation. Test fixtures/build outputs are not committed.
+
+Phase 08 local implementation is complete. Abrupt-kill partial scavenging,
+physical-device/LAN stress, native clipboard/openers, native Safari/iOS and
+user-owned Windows/macOS checks remain recorded. This is not v1 release acceptance;
+Phase 09 packaging is next and has not been started.

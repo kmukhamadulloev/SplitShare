@@ -112,3 +112,20 @@ See [SESSIONS.md](SESSIONS.md) for 256-bit token/cookie generation, 12-hour expi
 256-session capacity, rotation invalidation, default remote permissions and
 socket-derived host authorization. Token mode is active for remote API access;
 Open LAN retains capability enforcement. Local host control is intentionally full.
+
+## Phase 08 resource hardening
+
+Transport policy is specified in [API.md](API.md#transport-limits--phase-08).
+Connection identity is attached directly from the accepted socket, never forwarded
+headers. There are 128 HTTP connection permits, 32 download permits, 32 SSE permits,
+128 transfer records and 1–32 upload workers (one when parallel mode is disabled).
+Slow metadata requests and queued/idle uploads have deadlines. Shutdown drains
+HTTP connections for at most five seconds; the host retains its outer drain limit.
+These bounds limit allocation, not availability against every malicious LAN peer:
+there is no per-IP fairness quota and a client can occupy slots until its deadline.
+
+Raw parser errors, request URLs, cookies, transfer keys and filesystem paths are
+not logged by the transport. Upload warnings report stable failure codes and safe
+recovery suggestions. Existing token/config redaction, path/symlink race tests,
+remote host authorization and hostile-client concurrency regressions remain
+mandatory. This does not make SplitShare a public-internet server.

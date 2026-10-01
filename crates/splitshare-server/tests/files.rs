@@ -690,3 +690,23 @@ async fn raw_upload_conflicts_retry_and_oversized_file_body() {
     assert_eq!(response.status(), 400);
     server.stop().await;
 }
+
+#[tokio::test]
+async fn control_body_deadline_rejects_stalled_mutations_without_publication() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let server = Server::start().await;
+    let address = server.url.trim_start_matches("http://");
+    let mut socket = tokio::net::TcpStream::connect(address).await.unwrap();
+    socket.write_all(format!("POST /api/v1/directories HTTP/1.1\r\nHost: {address}\r\nContent-Type: application/json\r\nContent-Length: 100\r\nConnection: close\r\nX-SplitShare-Request: 1\r\n\r\n{{").as_bytes()).await.unwrap();
+    let mut bytes = Vec::new();
+    let length = tokio::time::timeout(Duration::from_secs(12), socket.read_to_end(&mut bytes))
+        .await
+        .unwrap()
+        .unwrap();
+    let reply = String::from_utf8_lossy(&bytes[..length]);
+    assert!(reply.starts_with("HTTP/1.1 408"));
+    assert!(reply.contains("CONTROL_BODY_TIMEOUT"));
+    assert_eq!(std::fs::read_dir(server.root.path()).unwrap().count(), 2);
+    server.shutdown.cancel();
+    server.task.await.unwrap().unwrap();
+}

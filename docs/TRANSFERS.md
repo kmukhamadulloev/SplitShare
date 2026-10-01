@@ -159,3 +159,25 @@ Linux memory regression: `python3 scripts/test-upload-memory.py` runs the releas
 binary with 8 MiB and 256 MiB generated uploads and checks RSS growth below 32 MiB.
 Abrupt process death can leave hidden partial files; crash scavenging is future
 reliability work. Graceful cancellation, disconnection and shutdown are covered.
+
+## Phase 08 interruption policy
+
+Queue permits have a 60-second wait deadline. Idle input also expires after 60
+seconds; these failures have distinct `UPLOAD_QUEUE_TIMEOUT` and
+`UPLOAD_IDLE_TIMEOUT` codes and never claim publication. Workers retain permits
+until temporary-file cleanup completes.
+
+The browser reconciles failed network responses with server snapshots. If status
+cannot be established, the row is `unconfirmed` (browser-only, not a new server
+Transfer state), with Check status and explicit Retry actions. A retry starts at
+zero with conflict policy `ask`, preventing an uncertain retry from silently
+replacing a published file. Available server state remains authoritative, including
+an upload still running. Reconnect/`transfer.resync` refetches snapshots; missing
+nonterminal history becomes unconfirmed rather than fabricated failure/success.
+
+`python3 scripts/benchmark-reliability.py` exercises generated 8 MiB, 10 MiB and
+1 GiB uploads/downloads, verifies every returned byte and checks Linux server RSS
+growth below 32 MiB. It also transfers 100 small files and lists 10,000 entries.
+Temporary fixtures are removed after the host exits. Local timings are not LAN or
+physical-disk throughput guarantees. Abrupt process death can still leave hidden
+partials; safe crash scavenging remains an explicitly recorded issue.

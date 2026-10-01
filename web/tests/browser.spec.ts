@@ -62,12 +62,18 @@ test('uploads, drag/drop, file/image/text paste and conflict resolution', async 
   await expect(page.getByRole('region',{name:'Files',exact:true}).getByText(`drop-${suffix}.txt`, { exact: true })).toBeVisible()
   await page.locator('main').evaluate((element,suffix) => {
     const data = new DataTransfer(); data.items.add(new File(['pasted file'],`paste-${suffix}.txt`,{type:'text/plain'}))
-    element.dispatchEvent(new ClipboardEvent('paste',{bubbles:true,cancelable:true,clipboardData:data}))
+    // Firefox discards constructor-supplied clipboardData on synthetic events.
+    const event = new ClipboardEvent('paste',{bubbles:true,cancelable:true})
+    Object.defineProperty(event,'clipboardData',{value:data})
+    element.dispatchEvent(event)
   },suffix)
   await expect(page.getByRole('region',{name:'Files',exact:true}).getByText(`paste-${suffix}.txt`, { exact: true })).toBeVisible()
   await page.locator('main').evaluate(element => {
     const data = new DataTransfer(); data.setData('text/plain','Draft from clipboard')
-    element.dispatchEvent(new ClipboardEvent('paste',{bubbles:true,cancelable:true,clipboardData:data}))
+    // Firefox discards constructor-supplied clipboardData on synthetic events.
+    const event = new ClipboardEvent('paste',{bubbles:true,cancelable:true})
+    Object.defineProperty(event,'clipboardData',{value:data})
+    element.dispatchEvent(event)
   })
   await expect(page.getByRole('heading', {name:'Save clipboard text'})).toBeVisible()
   await page.getByLabel('Filename',{exact:true}).fill(`draft-${suffix}.txt`)
@@ -78,7 +84,10 @@ test('uploads, drag/drop, file/image/text paste and conflict resolution', async 
   await page.locator('main').evaluate(element => {
     const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSuoAAAAASUVORK5CYII='), c => c.charCodeAt(0))
     const data = new DataTransfer(); data.items.add(new File([bytes],'clipboard.png',{type:'image/png'}))
-    element.dispatchEvent(new ClipboardEvent('paste',{bubbles:true,cancelable:true,clipboardData:data}))
+    // Firefox discards constructor-supplied clipboardData on synthetic events.
+    const event = new ClipboardEvent('paste',{bubbles:true,cancelable:true})
+    Object.defineProperty(event,'clipboardData',{value:data})
+    element.dispatchEvent(event)
   })
   await expect(page.getByRole('img',{name:'Pasted image preview'})).toBeVisible()
   await page.getByLabel('Filename',{exact:true}).fill(`image-${suffix}.png`)
@@ -107,7 +116,8 @@ test('uploads, drag/drop, file/image/text paste and conflict resolution', async 
   await page.screenshot({path:`test-results/transfers-${suffix}.png`,fullPage:true})
 })
 
-test('cancel an active upload and retry from the beginning', async ({ page, request }, info) => {
+test('cancel an active upload and retry from the beginning', async ({ page, request, browserName }, info) => {
+  test.skip(browserName !== 'chromium', 'Network upload throttling uses Chromium CDP; cancellation also has backend integration coverage.')
   const name = `cancel-${info.project.name}.bin`
   await page.goto('/')
   await expect(page.getByText('Connected',{exact:true})).toBeVisible()
