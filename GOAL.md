@@ -51,3 +51,7 @@ See docs/HOST_SETUP.md and the correction section of docs/ACCEPTANCE.md.
 
 Phase 08 backend hardening remains delivered. Windows/macOS native checks remain
 user-owned; no unexecuted checks are marked PASS.
+
+Clipboard follow-up: image/file paste now works inside the Clipboard API fallback
+dialog; mixed image/text clipboard items prioritize images. Regression coverage
+and validation are recorded in docs/ACCEPTANCE.md.

@@ -341,3 +341,29 @@ Exact validation:
 Native Windows/macOS picker/runtime validation remains user-owned. Other release
 gates (physical-device QR/LAN, native Safari/iOS, crash-partial scavenging and
 packaging) remain in ISSUES.md; this correction does not claim v1 release readiness.
+
+## Clipboard image correction — 2026-10-01
+
+| Criterion | Result |
+|---|---|
+| Image paste into permission fallback dialog, including file-item-only clipboard | PASS |
+| Images take priority over separate text items in either order | PASS |
+| Preview confirmation and exact saved image bytes | PASS |
+| Existing file/text paste, upload and conflict flows | PASS |
+| Documentation and local Git checkpoint | PASS |
+
+Exact validation:
+
+- `bash scripts/check.sh`: PASS (62 Rust tests, frontend unit tests, typecheck,
+  production UI build, formatting and Clippy).
+- `cargo build --locked -p splitshare`: PASS; rebuilt the executable before the
+  final browser run. The initial run against stale embedded assets failed the new
+  regressions and was superseded by the rebuilt run.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- clipboard.spec.ts browser.spec.ts`:
+  PASS, 22 passed and two existing non-Chromium CDP-only skips.
+- `bash scripts/build-release.sh`: PASS, release binary includes corrected UI.
+- `git diff --check`: PASS.
+
+Clipboard format and permission failures use deterministic browser fixtures.
+Native OS clipboard permissions and physical-device checks remain manual;
+Windows/macOS validation remains user-owned. No backend/API contract changed.

@@ -109,7 +109,13 @@ Treat pasted files as normal uploads.
 
 ### Images
 
-Paste event creates a preview and filename proposal before upload.
+Paste event creates a preview and filename proposal before upload. File/image
+representations take precedence over accompanying text. Paste events inspect both
+file lists and file items. If the Paste button cannot read the clipboard (including
+plain HTTP LAN pages), its fallback dialog accepts Ctrl+V / ⌘V image/file events,
+even while the text or filename field is focused. Ordinary text editing remains
+unchanged. Images still require Save file before uploading; clipboard failures
+never silently replace an image with a text draft.
 
 ### Text
 

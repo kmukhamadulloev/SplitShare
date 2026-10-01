@@ -375,3 +375,21 @@ native dialog; run it on a desktop test session. `SPLITSHARE_XDOTOOL` can specif
 an existing test executable. This tool is not a production runtime dependency.
 Windows/macOS picker tests remain user-owned; headless Linux cannot validate a
 native picker and uses CLI root selection instead.
+
+## Clipboard image regression
+
+`web/tests/clipboard.spec.ts` covers denied Clipboard API access followed by an
+image paste into the fallback textarea, item-only file data, byte-for-byte download
+verification after confirmation, and image/text items in either order. The existing
+browser suite retains file paste, ordinary text drafts, image confirmation and
+upload/conflict/cancellation coverage. These fixtures simulate clipboard formats
+and permission failures; they do not replace native OS clipboard validation.
+
+After building the frontend, rebuild the executable before browser tests because
+the test server runs `target/debug/splitshare` with embedded assets:
+
+```bash
+bash scripts/check.sh
+cargo build --locked -p splitshare
+SPLITSHARE_BROWSER_MATRIX=1 npm run test:e2e --prefix web -- clipboard.spec.ts browser.spec.ts
+```

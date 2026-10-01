@@ -32,6 +32,10 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Browser
 
+- Clipboard image fallback and mixed image/text precedence are corrected; browser
+  regressions cover item-only file data and exact uploaded image bytes. Native
+  OS clipboard permission checks remain the manual follow-up below.
+
 - [ ] Run manual screen-reader checks and native mobile touch/keyboard checks; Phase 06 automated Chromium accessibility and viewport checks are local coverage.
 
 - [ ] Validate native Clipboard API permissions on Chromium, Firefox and Safari; deterministic paste fixtures cover Chromium/Firefox/WebKit.

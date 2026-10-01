@@ -44,20 +44,42 @@ function clipboardFiles(files: File[]) {
   if (!pasteDialog.value?.open) nextImage()
 }
 function paste(event: ClipboardEvent) {
-  if (!props.enabled || document.querySelector('dialog[open]') || (event.target as HTMLElement).closest('input, textarea, [contenteditable=true]')) return
-  if (event.clipboardData?.files.length) { event.preventDefault(); clipboardFiles([...event.clipboardData.files]); return }
-  const text = event.clipboardData?.getData('text/plain')
+  if (!props.enabled) return
+  const inPasteDialog = !!pasteDialog.value?.open
+  if (!inPasteDialog && (document.querySelector('dialog[open]') || (event.target as HTMLElement).closest('input, textarea, [contenteditable=true]'))) return
+  const data = event.clipboardData
+  if (!data) return
+  // Some browsers expose clipboard files only through DataTransferItemList.
+  const items = Array.from(data.items ?? []).filter(item => item.kind === 'file')
+  const files = Array.from(data.files)
+  if (!files.length) files.push(...items.map(item => item.getAsFile()).filter((file): file is File => file !== null))
+  if (files.length) {
+    event.preventDefault()
+    if (inPasteDialog) { close(pasteDialog.value); revoke(); imageFile.value = undefined }
+    clipboardFiles(files)
+    return
+  }
+  if (items.length) { event.preventDefault(); uploads.problem = 'The browser could not read the clipboard file. Try copying the image again or use Upload files.'; return }
+  // Keep normal text editing inside the fallback dialog.
+  if (inPasteDialog) return
+  const text = data.getData('text/plain')
   if (text) { event.preventDefault(); void prepareText(text) }
 }
 async function readClipboard() {
-  if (!navigator.clipboard?.read) { await prepareText(''); pasteError.value = 'Paste with Ctrl+V (⌘V on Mac), or enter text below.'; return }
+  if (!navigator.clipboard?.read) { await prepareText(''); pasteError.value = 'Press Ctrl+V (⌘V on Mac) here to paste an image, file or text.'; return }
   try {
-    for (const item of await navigator.clipboard.read()) {
+    const items = await navigator.clipboard.read()
+    const images: File[] = []
+    // Inspect the whole clipboard before considering text representations.
+    for (const item of items) {
       const image = item.types.find(type => /^image\/(png|jpeg|webp|gif)$/.test(type))
-      if (image) clipboardFiles([new File([await item.getType(image)],`clipboard.${image.split('/')[1]}`,{ type: image })])
-      else if (item.types.includes('text/plain')) await prepareText(await (await item.getType('text/plain')).text())
+      if (image) images.push(new File([await item.getType(image)],`clipboard.${image.split('/')[1]}`,{ type: image }))
     }
-  } catch { await prepareText(''); pasteError.value = 'Clipboard access is unavailable. Paste or enter text below.' }
+    if (images.length) { clipboardFiles(images); return }
+    const text = items.find(item => item.types.includes('text/plain'))
+    if (text) { await prepareText(await (await text.getType('text/plain')).text()); return }
+    uploads.problem = 'No supported image or text was found. Try Ctrl+V (⌘V on Mac) or Upload files.'
+  } catch { await prepareText(''); pasteError.value = 'Clipboard access is unavailable. Press Ctrl+V (⌘V on Mac) here to paste an image, file or text.' }
 }
 function savePaste() {
   if (!filename.value.trim() || filename.value.includes('/') || filename.value.includes('\\')) { pasteError.value = 'Enter a filename without folders.'; return }
