@@ -149,3 +149,69 @@ pub async fn network(State(state): State<ServerState>) -> Json<serde_json::Value
     })).collect::<Vec<_>>() }),
     )
 }
+
+fn host_control(
+    state: &ServerState,
+) -> Result<&splitshare_application::host_control::HostControl, ApiError> {
+    state.host_control.as_ref().ok_or_else(|| {
+        ApiError::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "HOST_CONTROL_UNAVAILABLE",
+            "Host setup is unavailable in this server. Use the native SplitShare application.",
+        )
+    })
+}
+pub async fn setup(
+    State(state): State<ServerState>,
+) -> Result<Json<splitshare_application::host_control::Snapshot>, ApiError> {
+    Ok(Json(host_control(&state)?.snapshot()))
+}
+fn submit(
+    state: &ServerState,
+    action: splitshare_application::host_control::Action,
+) -> Result<
+    (
+        StatusCode,
+        Json<splitshare_application::host_control::Snapshot>,
+    ),
+    ApiError,
+> {
+    let snapshot = host_control(state)?
+        .submit(action)
+        .map_err(|message| ApiError::new(StatusCode::CONFLICT, "HOST_SETUP_REJECTED", message))?;
+    Ok((StatusCode::ACCEPTED, Json(snapshot)))
+}
+pub async fn choose_folder(
+    State(state): State<ServerState>,
+    body: axum::body::Bytes,
+) -> Result<impl IntoResponse, ApiError> {
+    if !body.is_empty() {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "INVALID_REQUEST",
+            "Folder selection takes no browser paths or body.",
+        ));
+    }
+    submit(
+        &state,
+        splitshare_application::host_control::Action::ChooseFolder,
+    )
+}
+pub async fn configure_network(
+    State(state): State<ServerState>,
+    body: Result<Json<splitshare_application::host_control::NetworkSettings>, JsonRejection>,
+) -> Result<impl IntoResponse, ApiError> {
+    let settings = body
+        .map_err(|_| {
+            ApiError::new(
+                StatusCode::BAD_REQUEST,
+                "INVALID_NETWORK_SETTINGS",
+                "Choose an IPv4 interface and a port from 1 to 65535.",
+            )
+        })?
+        .0;
+    submit(
+        &state,
+        splitshare_application::host_control::Action::Network(settings),
+    )
+}

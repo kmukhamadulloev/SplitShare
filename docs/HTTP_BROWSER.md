@@ -15,8 +15,9 @@ Build with `npm ci --prefix web`, then `bash scripts/build-release.sh`.
 ./scripts/dev.sh --root /path/to/share
 ```
 
-No folder is selected automatically. Without `--root`, status reports `sharing:
-false` and storage endpoints return 503 `SHARE_NOT_CONFIGURED`. IPv4 listeners are
+Folder/listener selection is now available through host settings and persisted;
+see [HOST_SETUP.md](HOST_SETUP.md). On a fresh launch without `--root`, status reports
+`sharing: false` and storage endpoints return 503 `SHARE_NOT_CONFIGURED`. IPv4 listeners are
 supported; IPv6 advertisement remains a later validation item. Binding to a LAN
 address now supports token links by default. Explicit `--open-lan` disables the
 cookie requirement but retains remote capabilities. Status reports `token_link`
@@ -54,8 +55,8 @@ production proxy trust or forwarding-header authorization.
 
 Requests use virtual paths. JSON bodies are limited to 16 KiB, downloads to 32
 active streams, and SSE to 32 connections. Worker jobs are limited to 16 concurrent
-blocking operations. Header parsing uses Axum/Hyper's defaults. Broader per-client
-quotas and request deadlines belong to reliability work.
+blocking operations. Phase 08 enforces connection/header/control-body and transfer deadlines;
+see [API.md](API.md#transport-limits--phase-08).
 
 ## Downloads
 

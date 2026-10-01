@@ -183,3 +183,25 @@ with 408 `UPLOAD_QUEUE_TIMEOUT`; input idle periods expire after 60 seconds with
 408 `UPLOAD_IDLE_TIMEOUT`. Both produce failed transfer snapshots without publication.
 A lost response alone does not establish whether publication succeeded; reconcile
 `/transfers` and the destination before explicitly retrying.
+
+## Native host setup
+
+`GET /api/v1/host/setup` returns `{bind_ip, port, folder_selected, interfaces,
+state, message, local_url}`. Interfaces contain `{address,label}`. No native paths
+are included. State is `ready`, `selecting`, `applying`, `cancelled` or `failed`.
+
+`POST /api/v1/host/folder` (no body) requests the native host folder dialog.
+`PUT /api/v1/host/setup` accepts only `{ "bind_ip": "0.0.0.0", "port": 8080 }`;
+choose an advertised interface and a port from 1–65535. Both require the mutation
+header and return 202 plus the current setup snapshot after enqueueing. Poll GET
+to establish the actual outcome. A changed port may require opening the updated
+host address. Queue/busy or unavailable interface/port validation returns 409
+`HOST_SETUP_REJECTED`; malformed network JSON returns 400 `INVALID_NETWORK_SETTINGS`.
+A nonempty folder-selection body returns 400 `INVALID_REQUEST`.
+Servers without the native controller return 503 `HOST_CONTROL_UNAVAILABLE`.
+Remote peers always receive 403, including reads and folder-dialog requests.
+
+Binding/selection failures appear as a safe `failed` snapshot, not a false success.
+Cancel/unavailable picker produces `cancelled` with explanatory text. Applying a
+change cancels active transfers, revokes sessions and persists native startup
+configuration. See [HOST_SETUP.md](HOST_SETUP.md) for lifecycle and recovery details.

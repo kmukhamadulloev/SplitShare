@@ -94,8 +94,9 @@ PNG supplies the native tray icon. macOS uses accessory activation policy.
   OS-assigned port), preserves the latest drained settings and creates fresh token
   sessions. Old links and cookies cannot survive restart. If binding fails, the
   host remains stopped and can retry after the port is released.
-- Listener address/root are startup options, not editable WebUI settings. Current
-  permission/concurrency changes apply live and need no listener restart.
+- Host settings now support native folder selection and editable interface/port
+  controls; see [HOST_SETUP.md](HOST_SETUP.md). Changes drain/restart the listener
+  and invalidate sessions. Permission/concurrency changes still apply live.
 - Quit and OS signals use the same cancellation/drain path. A drain timeout is
   fatal rather than starting a second listener over unfinished work.
 - Display/menu initialization errors and Rust panics in the tray adapter fall back
@@ -110,7 +111,7 @@ backend; Wayland-only clipboard behavior remains a device-validation gate.
 
 Linux's real desktop menu is exercised by `scripts/smoke-tray-linux.py` through the
 spawned process's DBus menu. Windows/macOS native smoke remains unverified; the
-phase is not complete until that acceptance gate passes.
+native Windows/macOS checks are user-owned follow-up.
 
 ## Native release smoke record
 

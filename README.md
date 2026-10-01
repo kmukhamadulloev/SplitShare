@@ -121,6 +121,15 @@ SplitShare v1.0 does **not** require a database.
 
 A database may be added only by an explicit later goal that requires persistent history or another durable domain model.
 
+## Use SplitShare
+
+Run the rebuilt native app with `./target/release/splitshare --open`. On first launch,
+click **Set up sharing**, choose a folder in the native dialog, then enable
+**All interfaces (LAN / VPN)** under **network**. Open the QR dialog and select a
+reachable LAN address for the other device. Folder/listener choices are saved.
+See [host setup and troubleshooting](docs/HOST_SETUP.md) for complete steps and
+terminal/headless commands.
+
 ## Development
 
 Phase 03 supports real HTTP browsing, file mutations, streamed downloads/Range,

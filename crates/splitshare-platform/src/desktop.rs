@@ -56,6 +56,13 @@ impl DesktopActions {
             Err(_) => Err("Host application launch could not be confirmed"),
         }
     }
+    pub async fn choose_folder() -> Option<std::path::PathBuf> {
+        rfd::AsyncFileDialog::new()
+            .set_title("Choose the folder to share with SplitShare")
+            .pick_folder()
+            .await
+            .map(|folder| folder.path().to_owned())
+    }
     pub async fn folder(path: &Path) -> Result<(), &'static str> {
         Self::open(path.as_os_str().to_owned()).await
     }

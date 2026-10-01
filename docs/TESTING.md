@@ -343,3 +343,35 @@ storage; `--large-mib`/`--files` allow smaller development runs but do not repla
 the default 1 GiB/10,000-entry gate. CI runs the full browser engine matrix and this
 benchmark on Linux. Physical-device LAN, native Safari/mobile, OS clipboard/openers
 and Windows/macOS native validation remain separately recorded release follow-ups.
+
+
+## Host setup correction
+
+`bash scripts/check.sh` now includes 62 Rust tests. New coverage verifies native
+setup remote denial (including forged forwarding headers), no browser-selected
+filesystem paths, busy picker limits, real sandbox replacement, listener rebinding,
+occupied-port preservation, startup persistence, missing-folder recovery and private
+versioned configuration. The normal browser matrix has 48 cases: 46 pass and the
+two existing non-Chromium CDP throttling cases are explicitly skipped.
+
+`web/tests/host-setup.spec.ts` starts an additional isolated native process on port
+43130 without a root. It checks the first-run setup action, QR-to-setup flow,
+interface/port form, explicit Apply and Save changes, real LAN rebinding and restart
+persistence. Another test injects a discovery failure and verifies QR retry plus
+the loopback Network settings shortcut. Existing QR tests decode actual pixels.
+
+For the real Linux/X11 native picker (requires a desktop portal and `xdotool`):
+
+```bash
+cargo build --locked -p splitshare
+python3 scripts/smoke-host-setup-linux.py
+```
+
+The smoke starts an isolated host on port 43131, opens its actual portal folder
+dialog, cancels once, then selects a temporary folder and verifies actual listing
+and private persistence. It refuses to run with an existing SplitShare chooser
+open and checks the target window before keyboard input. It briefly focuses the
+native dialog; run it on a desktop test session. `SPLITSHARE_XDOTOOL` can specify
+an existing test executable. This tool is not a production runtime dependency.
+Windows/macOS picker tests remain user-owned; headless Linux cannot validate a
+native picker and uses CLI root selection instead.

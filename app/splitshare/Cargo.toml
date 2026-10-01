@@ -19,6 +19,7 @@ tracing-subscriber.workspace = true
 splitshare-application = { path = "../../crates/splitshare-application" }
 
 [dev-dependencies]
+serde_json.workspace = true
 tempfile.workspace = true
 reqwest.workspace = true
 futures-util.workspace = true

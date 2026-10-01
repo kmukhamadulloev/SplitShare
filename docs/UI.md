@@ -204,3 +204,13 @@ see [TRANSFERS.md](TRANSFERS.md#phase-08-interruption-policy).
 
 Download anchors explicitly use `download`, including row/menu/selected-file links,
 so Firefox does not treat the request as navigation and interrupt live SSE updates.
+
+
+## Host setup correction
+
+General settings now offers native **Choose shared folder**, and Network has real
+interface/port inputs. Network changes apply through their explicit button or
+**Save changes**. Fresh launches expose **Set up sharing** in the empty state.
+The QR icon routes unconfigured hosts to folder setup; loopback QR has a Network
+settings shortcut. QR loading, generation errors and retries are explicit.
+See [HOST_SETUP.md](HOST_SETUP.md) for the complete workflow and persistence rules.

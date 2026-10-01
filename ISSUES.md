@@ -67,3 +67,12 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 - [ ] Native Safari/iOS, physical mobile touch/accessibility, separate-device LAN
   and OS-action checks remain release gates; Linux browser-engine automation does
   not substitute for these checks. Windows/macOS native checks are user-owned.
+
+## Host setup
+
+- First-run folder/network controls and QR setup/retry are implemented; see
+  [HOST_SETUP.md](docs/HOST_SETUP.md) and the correction acceptance evidence.
+- [ ] User-owned: native Windows/macOS folder picker validation. Linux/X11 portal
+  cancel/select was exercised with a real native dialog; Wayland remains manual.
+- Linux desktop selection needs an available XDG portal/backend. Headless hosts
+  use `--root`; picker cancellation/unavailability leaves the existing share intact.

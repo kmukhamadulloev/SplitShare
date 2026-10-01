@@ -52,6 +52,7 @@ async fn shutdown_signal() -> std::io::Result<()> {
 struct Options {
     root: Option<std::path::PathBuf>,
     bind: std::net::SocketAddrV4,
+    bind_explicit: bool,
     open_lan: bool,
     dev: bool,
     parallel: Option<u8>,
@@ -62,6 +63,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error + Send + Sync>> {
     let mut result = Options {
         root: None,
         bind: "127.0.0.1:8080".parse()?,
+        bind_explicit: false,
         open_lan: false,
         dev: false,
         parallel: None,
@@ -75,6 +77,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error + Send + Sync>> {
                 result.root = Some(args.next().ok_or("--root needs a directory")?.into())
             }
             Some("--bind") => {
+                result.bind_explicit = true;
                 result.bind = args
                     .next()
                     .ok_or("--bind needs an IPv4 address:port")?

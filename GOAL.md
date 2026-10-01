@@ -1,8 +1,8 @@
-# Current Goal — Phase 08 Reliability, Security and Performance
+# Current Goal — Host setup correction
 
 The active implementation goal is:
 
-`goals/PHASE_08_RELIABILITY_SECURITY_PERFORMANCE.md`
+`goals/HOST_SETUP_CORRECTION.md`
 
 ## Product release program
 
@@ -43,12 +43,11 @@ Future mobile host work may reuse the Rust core through a native library, but cu
 
 ## Latest checkpoint
 
-Phase 08 local implementation and acceptance are complete; see
-[acceptance evidence](docs/ACCEPTANCE.md#phase-08-local-acceptance--2026-10-01).
-Delivered bounded transport/transfer resources, truthful interruption recovery,
-security regressions, measured 1 GiB and directory performance, browser engine
-coverage and CI checks. Phase 09 packaging is next; it has not been started.
+The user's first-run report exposed missing folder/network setup controls that
+previous Phase 08 tests did not cover. The host setup correction is implemented and locally verified before
+Phase 09 packaging: native folder selection, persistent interface/port controls,
+honest QR readiness and first-run guidance now have integration/browser coverage.
+See docs/HOST_SETUP.md and the correction section of docs/ACCEPTANCE.md.
 
-Native Windows/macOS validation is user-owned manual follow-up and does not block
-this phase, as authorized on 2026-10-01. Unexecuted native checks remain recorded,
-not marked PASS. Remaining release follow-ups are tracked in ISSUES.md.
+Phase 08 backend hardening remains delivered. Windows/macOS native checks remain
+user-owned; no unexecuted checks are marked PASS.

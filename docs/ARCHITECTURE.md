@@ -240,3 +240,9 @@ Phase 07 adds native desktop adapters in `splitshare-platform::desktop`. The
 composition root's Host controller owns listener start/stop, preserved sandbox
 capabilities, settings retention and shutdown. A typed in-process command channel
 keeps desktop controls separate from HTTP authorization. See [TRAY.md](TRAY.md).
+
+
+Host setup uses application `HostControl` snapshots and a bounded command channel.
+HTTP never receives or returns native root paths. The composition root opens the
+native picker through the platform adapter, reconfigures listeners/sandboxes and
+persists native-only startup settings. See [HOST_SETUP.md](HOST_SETUP.md).

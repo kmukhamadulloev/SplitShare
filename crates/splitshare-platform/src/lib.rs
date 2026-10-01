@@ -135,3 +135,5 @@ mod persistence_tests {
         assert_eq!(fs::read_dir(root.path()).unwrap().count(), 1);
     }
 }
+
+pub mod startup;

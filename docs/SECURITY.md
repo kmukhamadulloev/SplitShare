@@ -129,3 +129,10 @@ not logged by the transport. Upload warnings report stable failure codes and saf
 recovery suggestions. Existing token/config redaction, path/symlink race tests,
 remote host authorization and hostile-client concurrency regressions remain
 mandatory. This does not make SplitShare a public-internet server.
+
+
+Native folder/network controls use the same socket-derived host-only policy and
+mutation protections as permission settings. They expose no native root paths.
+Only the OS picker returns a path, directly to Rust; network-only changes preserve
+the open sandbox capability. Native root/listener settings live in private
+application-data `host.json`, never HTTP responses. See [HOST_SETUP.md](HOST_SETUP.md).

@@ -301,3 +301,43 @@ Phase 08 local implementation is complete. Abrupt-kill partial scavenging,
 physical-device/LAN stress, native clipboard/openers, native Safari/iOS and
 user-owned Windows/macOS checks remain recorded. This is not v1 release acceptance;
 Phase 09 packaging is next and has not been started.
+
+
+## Host setup correction — 2026-10-01
+
+The user's report exposed a usability gap in prior completion claims: folder and
+listener setup were CLI-only, and fresh launches had no actionable QR setup flow.
+Phase 08's earlier tests exercised a preconfigured root. This correction tests an
+unconfigured launch explicitly; it does not pretend the earlier UI was complete.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| Discoverable first-launch host setup | PASS | Fresh-process browser test opens Set up sharing; no-root QR opens General setup |
+| Native folder selection, activation and persistence | PASS on Linux | Real portal dialog cancel/select smoke; actual file listing; private host.json; Rust restart/sandbox replacement tests |
+| Real interface/port controls with recovery | PASS | Same-port loopback/LAN rebinding, changed port, occupied-port preservation, saved restart settings; browser Apply and Save changes |
+| QR generation or actionable setup/error state | PASS | QR pixels decode to current links across engines; no-root guidance, loopback settings shortcut, failed discovery and retry |
+| Host-only authorization and sandbox retained | PASS | Remote read/write/picker denied despite forged headers, arbitrary root payload rejected, full traversal/redaction suite |
+| Documentation, validation and local commit | PASS | HOST_SETUP.md, API/OpenAPI and lifecycle docs aligned; exact checks below; completed fix committed locally |
+
+Exact validation:
+
+- `bash scripts/check.sh`: PASS — formatting, Clippy with warnings denied, all
+  62 Rust tests, two frontend unit files, frontend typechecking and production build.
+- `cargo test --locked -p splitshare-server --test access`: PASS, seven tests,
+  rerun after strict rejection of nonempty folder-selection bodies.
+- `cargo fmt --check` and `cargo clippy --locked --workspace --all-targets -- -D warnings`: PASS.
+- `cargo build --locked -p splitshare`: PASS.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web`:
+  PASS, 46 cases; two explicitly skipped CDP-only variants. Chromium desktop/mobile,
+  Firefox desktop and Linux WebKit desktop cover the corrected setup/QR flow.
+- `bash scripts/build-release.sh` and `cargo build --locked --release -p splitshare`: PASS.
+- `python3 scripts/smoke-foundation.py`, `python3 scripts/smoke-sessions.py`, and
+  `python3 scripts/smoke-tray-fallback.py`: PASS.
+- `SPLITSHARE_XDOTOOL=/tmp/splitshare-picker-tools/root/usr/bin/xdotool python3 scripts/smoke-host-setup-linux.py`:
+  PASS — actual Linux/X11 native picker cancel/select, live sandbox and persistence.
+- `/usr/bin/python3 scripts/smoke-tray-linux.py`: PASS — native lifecycle regression.
+- OpenAPI YAML/local references, Python smoke syntax and `git diff --check`: PASS.
+
+Native Windows/macOS picker/runtime validation remains user-owned. Other release
+gates (physical-device QR/LAN, native Safari/iOS, crash-partial scavenging and
+packaging) remain in ISSUES.md; this correction does not claim v1 release readiness.

@@ -9,6 +9,7 @@ description = "Desktop system tray and OS-specific host adapters."
 [dependencies]
 directories.workspace = true
 serde_json.workspace = true
+serde.workspace = true
 thiserror.workspace = true
 tempfile.workspace = true
 splitshare-core = { path = "../splitshare-core" }
@@ -20,6 +21,7 @@ arboard = { version = "3.6", default-features = false }
 tokio.workspace = true
 tracing.workspace = true
 png = "0.18"
+rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "tokio"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 gtk = "0.18"

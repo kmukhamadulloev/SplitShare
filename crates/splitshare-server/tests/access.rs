@@ -453,3 +453,79 @@ async fn each_capability_is_independent() {
         }
     }
 }
+
+#[tokio::test]
+async fn native_setup_is_host_only_and_never_accepts_browser_paths() {
+    use splitshare_application::host_control::{Action, HostControl, Interface, Snapshot};
+    let (_root, mut state) = state();
+    let (control, mut actions) = HostControl::new(Snapshot {
+        bind_ip: "127.0.0.1".into(),
+        port: 8080,
+        folder_selected: false,
+        interfaces: vec![Interface {
+            address: "127.0.0.1".into(),
+            label: "Local".into(),
+        }],
+        state: "ready",
+        message: None,
+        local_url: "http://127.0.0.1:8080/".into(),
+    });
+    state.host_control = Some(control.clone());
+    let cookie = join(&state).await;
+    for (method, path, body) in [
+        ("GET", "/api/v1/host/setup", ""),
+        (
+            "PUT",
+            "/api/v1/host/setup",
+            r#"{"bind_ip":"127.0.0.1","port":8081}"#,
+        ),
+        ("POST", "/api/v1/host/folder", ""),
+    ] {
+        assert_eq!(
+            send(&state, false, method, path, &cookie, body)
+                .await
+                .status(),
+            403
+        );
+    }
+    assert!(actions.try_recv().is_err());
+    for body in [
+        r#"{"bind_ip":"203.0.113.1","port":8081}"#,
+        r#"{"bind_ip":"127.0.0.1","port":0}"#,
+        r#"{"bind_ip":"127.0.0.1","port":8081,"root":"/private/path"}"#,
+    ] {
+        assert!(
+            send(&state, true, "PUT", "/api/v1/host/setup", "", body)
+                .await
+                .status()
+                .is_client_error()
+        );
+    }
+    assert!(actions.try_recv().is_err());
+    assert_eq!(
+        send(
+            &state,
+            true,
+            "POST",
+            "/api/v1/host/folder",
+            "",
+            r#"{"root":"/private/path"}"#
+        )
+        .await
+        .status(),
+        400
+    );
+    assert!(actions.try_recv().is_err());
+    let response = send(&state, true, "POST", "/api/v1/host/folder", "", "").await;
+    assert_eq!(response.status(), 202);
+    let payload = json(response).await;
+    assert_eq!(payload["state"], "selecting");
+    assert!(payload.get("root").is_none());
+    assert!(matches!(actions.try_recv().unwrap(), Action::ChooseFolder));
+    assert_eq!(
+        send(&state, true, "POST", "/api/v1/host/folder", "", "")
+            .await
+            .status(),
+        409
+    );
+}

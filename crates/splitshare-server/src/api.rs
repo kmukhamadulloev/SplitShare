@@ -28,6 +28,7 @@ use tokio_util::sync::CancellationToken;
 #[derive(Clone)]
 pub struct ServerState {
     pub files: Option<FileService>,
+    pub host_control: Option<splitshare_application::host_control::HostControl>,
     pub transfers: Option<splitshare_application::transfers::TransferManager>,
     pub sessions: SessionManager,
     pub settings_store: Option<Arc<dyn SettingsStore>>,
@@ -63,6 +64,7 @@ impl ServerState {
         });
         Self {
             files,
+            host_control: None,
             transfers,
             sessions,
             settings_store: None,

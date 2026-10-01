@@ -17,7 +17,7 @@ The project intentionally follows a release-quality path instead of an MVP path.
 | 05 | Sessions + permissions + QR | Implemented; Linux/browser acceptance PASS, native/device validation pending |
 | 06 | Production WebUI | Implemented; Linux/browser acceptance PASS, native/device validation pending |
 | 07 | Desktop tray + lifecycle | Implemented; Linux PASS; Windows/macOS manual validation owned by user |
-| 08 | Reliability + security + performance | Implemented; local acceptance PASS; native/device release follow-ups recorded |
+| 08 | Reliability + security + performance | Implemented; local acceptance PASS; host setup correction verified; native/device follow-ups recorded |
 | 09 | Packaging + v1.0 acceptance | Planned |
 
 ## v1.0 definition

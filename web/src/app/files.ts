@@ -22,7 +22,7 @@ export const useFiles = defineStore('files', () => {
     if (cause instanceof ApiError && cause.status === 401) { sessionRequired.value = true; status.value = null; clearEntries() }
   }
   async function load(destination = path.value) {
-    if (!status.value?.permissions.browse) { clearEntries(); return }
+    if (!status.value?.sharing || !status.value.permissions.browse) { clearEntries(); return }
     const current = ++revision
     if (path.value !== destination) { entries.value = []; path.value = destination }
     listing?.abort(); listing = new AbortController()

@@ -542,6 +542,94 @@ paths:
           $ref: '#/components/responses/Error'
         '500':
           $ref: '#/components/responses/Error'
+  /api/v1/host/setup:
+    get:
+      summary: Read native host setup without filesystem paths
+      responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '200':
+          description: Current setup and operation state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostSetup'
+        '403':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+    put:
+      summary: Request a persistent listener interface/port change
+      description: Host-only; accepted does not mean applied. Poll setup state.
+        Applying drains transfers, restarts the listener and revokes sessions.
+      parameters:
+      - $ref: '#/components/parameters/MutationHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [bind_ip, port]
+              properties:
+                bind_ip:
+                  type: string
+                  format: ipv4
+                  description: An address from the advertised setup interfaces
+                port:
+                  type: integer
+                  minimum: 1
+                  maximum: 65535
+      responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '202':
+          description: Accepted; inspect operation state before assuming success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostSetup'
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+  /api/v1/host/folder:
+    post:
+      summary: Open a native folder picker on the host
+      description: No browser filesystem path is accepted or returned. Cancellation
+        preserves the existing share. Poll setup state after acceptance.
+      parameters:
+      - $ref: '#/components/parameters/MutationHeader'
+      responses:
+        '431':
+          $ref: '#/components/responses/Error'
+        '408':
+          $ref: '#/components/responses/Error'
+        '413':
+          $ref: '#/components/responses/Error'
+        '202':
+          description: Native selection requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostSetup'
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
 components:
   parameters:
     Path:
@@ -583,6 +671,38 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    HostSetup:
+      type: object
+      required: [bind_ip, port, folder_selected, interfaces, state, message, local_url]
+      properties:
+        bind_ip:
+          type: string
+          format: ipv4
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        folder_selected:
+          type: boolean
+        local_url:
+          type: string
+          format: uri
+        state:
+          type: string
+          enum: [ready, selecting, applying, cancelled, failed]
+        message:
+          type: [string, 'null']
+        interfaces:
+          type: array
+          items:
+            type: object
+            required: [address, label]
+            properties:
+              address:
+                type: string
+                format: ipv4
+              label:
+                type: string
     VirtualPath:
       type: string
       description: Validated virtual-root path; see STORAGE.md for byte limits and
