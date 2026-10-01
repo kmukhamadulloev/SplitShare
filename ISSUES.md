@@ -32,6 +32,9 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Browser
 
+- Paste button cannot read clipboard directly on plain HTTP LAN origins because
+  the browser requires a secure context. The UI now explains this rather than
+  opening an undetected text draft. Use localhost on the host or Ctrl+V on LAN.
 - Clipboard image fallback and mixed image/text precedence are corrected; browser
   regressions cover item-only file data and exact uploaded image bytes. Native
   OS clipboard permission checks remain the manual follow-up below.

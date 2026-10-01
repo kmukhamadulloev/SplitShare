@@ -55,3 +55,7 @@ user-owned; no unexecuted checks are marked PASS.
 Clipboard follow-up: image/file paste now works inside the Clipboard API fallback
 dialog; mixed image/text clipboard items prioritize images. Regression coverage
 and validation are recorded in docs/ACCEPTANCE.md.
+
+The follow-up report identified HTTP LAN clipboard restrictions: Paste button
+failures now show an undetected state, not a text editor. Real browser clipboard
+button access and HTTP LAN behavior have dedicated regression coverage.

@@ -16,6 +16,9 @@ const draft = ref('')
 const preview = ref('')
 const imageFile = ref<File>()
 const pasteError = ref('')
+const awaitingClipboard = ref(false)
+const readingClipboard = ref(false)
+const pasteTitle = computed(() => awaitingClipboard.value ? 'Paste from clipboard' : imageFile.value ? 'Paste image' : 'Save clipboard text')
 const nameInput = ref<HTMLInputElement>()
 const conflicts = computed(() => uploads.items.filter(item => item.state === 'failed' && item.failure === 'CONFLICT'))
 const conflict = ref<QueueItem>()
@@ -27,6 +30,7 @@ function select(event: Event) { const input = event.target as HTMLInputElement; 
 function drop(event: DragEvent) { if (props.enabled && event.dataTransfer?.files.length) { event.preventDefault(); uploads.enqueue([...event.dataTransfer.files],props.path) } }
 async function prepareText(text: string) {
   if (text.length > 2 * 1024 * 1024) { uploads.problem = 'Clipboard text is limited to 2 MiB.'; return }
+  awaitingClipboard.value = false
   imageFile.value = undefined; revoke(); draft.value = text; filename.value = 'clipboard.txt'; pasteError.value = ''
   try { JSON.parse(text); filename.value = 'clipboard.json' } catch { /* Plain text remains plain text. */ }
   show(pasteDialog.value); await nextTick(); nameInput.value?.focus()
@@ -34,6 +38,7 @@ async function prepareText(text: string) {
 function revoke() { if (preview.value) URL.revokeObjectURL(preview.value); preview.value = '' }
 function nextImage() {
   const file = queuedImages.shift(); if (!file) return
+  awaitingClipboard.value = false
   imageFile.value = file; draft.value = ''; filename.value = file.name || 'clipboard.png'; pasteError.value = ''; revoke(); preview.value = URL.createObjectURL(file)
   show(pasteDialog.value)
 }
@@ -61,12 +66,23 @@ function paste(event: ClipboardEvent) {
   }
   if (items.length) { event.preventDefault(); uploads.problem = 'The browser could not read the clipboard file. Try copying the image again or use Upload files.'; return }
   // Keep normal text editing inside the fallback dialog.
-  if (inPasteDialog) return
+  if (inPasteDialog && !awaitingClipboard.value) return
   const text = data.getData('text/plain')
   if (text) { event.preventDefault(); void prepareText(text) }
 }
+function awaitClipboard(message: string) {
+  awaitingClipboard.value = true; imageFile.value = undefined; revoke(); draft.value = ''; pasteError.value = message
+  show(pasteDialog.value)
+}
 async function readClipboard() {
-  if (!navigator.clipboard?.read) { await prepareText(''); pasteError.value = 'Press Ctrl+V (⌘V on Mac) here to paste an image, file or text.'; return }
+  if (readingClipboard.value || !props.enabled) return
+  if (!navigator.clipboard?.read) {
+    awaitClipboard(window.isSecureContext
+      ? 'This browser does not support reading images with the Paste button. Press Ctrl+V (⌘V on Mac) here or use Upload files.'
+      : 'This HTTP address does not allow clipboard access from the Paste button. On the host, open SplitShare through localhost. Otherwise press Ctrl+V (⌘V on Mac) here or use Upload files.')
+    return
+  }
+  readingClipboard.value = true
   try {
     const items = await navigator.clipboard.read()
     const images: File[] = []
@@ -75,13 +91,18 @@ async function readClipboard() {
       const image = item.types.find(type => /^image\/(png|jpeg|webp|gif)$/.test(type))
       if (image) images.push(new File([await item.getType(image)],`clipboard.${image.split('/')[1]}`,{ type: image }))
     }
-    if (images.length) { clipboardFiles(images); return }
+    if (images.length) { if (awaitingClipboard.value) close(pasteDialog.value); awaitingClipboard.value = false; clipboardFiles(images); return }
     const text = items.find(item => item.types.includes('text/plain'))
     if (text) { await prepareText(await (await text.getType('text/plain')).text()); return }
-    uploads.problem = 'No supported image or text was found. Try Ctrl+V (⌘V on Mac) or Upload files.'
-  } catch { await prepareText(''); pasteError.value = 'Clipboard access is unavailable. Press Ctrl+V (⌘V on Mac) here to paste an image, file or text.' }
+    awaitClipboard('No supported image or text was exposed by the browser. Copy the image itself, then retry, or use Upload files.')
+  } catch (cause) {
+    awaitClipboard(cause instanceof DOMException && cause.name === 'NotAllowedError'
+      ? 'Clipboard permission was denied. Allow clipboard access in your browser and retry, or press Ctrl+V (⌘V on Mac) here.'
+      : 'The browser could not read the clipboard. Try copying the image again, then retry, or press Ctrl+V (⌘V on Mac) here.')
+  } finally { readingClipboard.value = false }
 }
 function savePaste() {
+  if (awaitingClipboard.value) return
   if (!filename.value.trim() || filename.value.includes('/') || filename.value.includes('\\')) { pasteError.value = 'Enter a filename without folders.'; return }
   if (!imageFile.value && new Blob([draft.value]).size > 2 * 1024 * 1024) { pasteError.value = 'Clipboard text is limited to 2 MiB.'; return }
   const file = new File([imageFile.value ?? draft.value],filename.value,{ type: imageFile.value?.type ?? 'text/plain' })
@@ -97,7 +118,7 @@ defineExpose({ drop })
 </script>
 <template>
   <input ref="picker" type="file" multiple hidden aria-label="Upload files" @change="select" />
-  <button class="button paste-button" :disabled="!enabled" aria-label="Paste" @click="readClipboard"><ClipboardPaste :size="18" /><span class="desktop-label">Paste</span></button>
+  <button class="button paste-button" :disabled="!enabled || readingClipboard" aria-label="Paste" @click="readClipboard"><ClipboardPaste :size="18" /><span class="desktop-label">Paste</span></button>
   <button class="icon-btn primary upload-button" :disabled="!enabled" aria-label="Upload files" @click="picker?.click()"><Upload :size="18" /></button>
   <Teleport defer to="#transfer-footer">
   <section v-if="uploads.items.length" class="transfer-summary" aria-label="Overall transfer progress">
@@ -122,13 +143,14 @@ defineExpose({ drop })
     </div>
     <div class="dialog-actions"><button class="button" @click="uploads.clear()">Clear finished</button><button class="button primary" @click="close(queue)">Close queue</button></div>
   </dialog>
-  <dialog ref="pasteDialog" :aria-label="imageFile ? 'Paste image' : 'Save clipboard text'" @cancel.prevent="dismissPaste">
-    <form @submit.prevent="savePaste"><h2>{{ imageFile ? 'Paste image' : 'Save clipboard text' }}</h2>
-      <img v-if="imageFile" :src="preview" alt="Pasted image preview" class="paste-preview" />
+  <dialog ref="pasteDialog" :aria-label="pasteTitle" @cancel.prevent="dismissPaste">
+    <form @submit.prevent="savePaste"><h2>{{ pasteTitle }}</h2>
+      <p v-if="awaitingClipboard">Clipboard contents have not been detected. Paste here to continue.</p>
+      <img v-else-if="imageFile" :src="preview" alt="Pasted image preview" class="paste-preview" />
       <template v-else><label for="clipboard-text">Text</label><textarea id="clipboard-text" v-model="draft" rows="7" maxlength="2097152"></textarea></template>
-      <label for="clipboard-name">Filename</label><input id="clipboard-name" ref="nameInput" v-model="filename" required />
+      <template v-if="!awaitingClipboard"><label for="clipboard-name">Filename</label><input id="clipboard-name" ref="nameInput" v-model="filename" required /></template>
       <p v-if="pasteError" class="error" role="alert">{{ pasteError }}</p>
-      <div class="dialog-actions"><button class="button" type="button" @click="dismissPaste">Cancel</button><button class="button primary" :disabled="!enabled">Save file</button></div>
+      <div class="dialog-actions"><button class="button" type="button" @click="dismissPaste">Cancel</button><button v-if="awaitingClipboard" class="button primary" type="button" :disabled="readingClipboard" @click="readClipboard">Retry clipboard</button><button v-else class="button primary" :disabled="!enabled">Save file</button></div>
     </form>
   </dialog>
   <dialog ref="conflictDialog" aria-label="File already exists" @cancel.prevent="resolve()"><h2>File already exists</h2><p>Choose what to do with “{{ conflict?.file.name }}”. Retrying uploads the file again from the beginning.</p><div class="dialog-actions"><button class="button" @click="resolve('keep')">Keep existing</button><button class="button" :disabled="!enabled" @click="resolve('auto_rename')">Save a copy</button><button class="button danger" :disabled="!enabled" @click="resolve('replace')">Replace</button></div></dialog>

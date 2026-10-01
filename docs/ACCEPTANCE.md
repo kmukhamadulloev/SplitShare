@@ -367,3 +367,39 @@ Exact validation:
 Clipboard format and permission failures use deterministic browser fixtures.
 Native OS clipboard permissions and physical-device checks remain manual;
 Windows/macOS validation remains user-owned. No backend/API contract changed.
+
+## Paste button HTTP LAN correction — 2026-10-01
+
+The user clarified that Ctrl+V works but the Paste button opens a text form on an
+HTTP LAN address. The prior fix covered event handling, but left this misleading
+classification intact: a missing/failed Async Clipboard API read opened an empty
+text draft. The corrected button uses a neutral undetected state with a specific
+HTTP/unsupported/permission/read-failure explanation and retry. HTTP LAN button
+reads remain subject to browser secure-context restrictions; use localhost on the
+host or keyboard paste on a LAN client. No browser-policy bypass was added.
+
+Acceptance criteria:
+
+- PASS: HTTP LAN blocked reads show no text editor or Save file action.
+- PASS: Permission failures can retry and switch to an image preview.
+- PASS: Real Chromium Clipboard API image writes/readback followed by clicking Paste
+  produce a preview and exact uploaded clipboard bytes.
+- PASS: Existing keyboard image/file/text paste and upload regressions remain passing.
+
+The LAN test uses an actual local interface with desktop/system proxy bypass.
+Initial proxy-routed test attempts returned a proxy 502 and were superseded by
+direct-interface runs. Real clipboard permission grants are Chromium-only;
+Firefox/WebKit use explicit skips for that test and still exercise actual HTTP
+LAN restrictions plus permission fixtures. Native desktop/browser permission
+prompts remain manual validation.
+
+Validation (all PASS):
+
+- `bash scripts/check.sh`: 62 Rust tests, frontend unit tests, typecheck/build,
+  formatting and Clippy.
+- `cargo build --locked -p splitshare`: rebuilt embedded UI for browser tests.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- clipboard.spec.ts browser.spec.ts`:
+  32 passed, four explicit skips (two CDP variants and two real-clipboard
+  permission-grant variants).
+- `bash scripts/build-release.sh`: rebuilt release executable.
+- `git diff --check`: clean. Documentation and local Git checkpoint completed.

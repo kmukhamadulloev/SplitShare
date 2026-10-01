@@ -393,3 +393,10 @@ bash scripts/check.sh
 cargo build --locked -p splitshare
 SPLITSHARE_BROWSER_MATRIX=1 npm run test:e2e --prefix web -- clipboard.spec.ts browser.spec.ts
 ```
+
+The clipboard suite also clicks Paste after writing a PNG through the real
+Chromium Clipboard API (desktop and mobile emulation) and verifies the uploaded
+bytes. This runs in an isolated headless browser; no clipboard API mock is used.
+Firefox/WebKit skip that permission-grant test. A separate test visits the host's
+actual HTTP LAN interface and verifies blocked button access cannot become a text
+draft. Permission denial/retry remains a deterministic fixture across engines.

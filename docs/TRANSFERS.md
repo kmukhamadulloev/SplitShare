@@ -112,8 +112,8 @@ Treat pasted files as normal uploads.
 Paste event creates a preview and filename proposal before upload. File/image
 representations take precedence over accompanying text. Paste events inspect both
 file lists and file items. If the Paste button cannot read the clipboard (including
-plain HTTP LAN pages), its fallback dialog accepts Ctrl+V / ⌘V image/file events,
-even while the text or filename field is focused. Ordinary text editing remains
+plain HTTP LAN pages), its neutral fallback dialog accepts Ctrl+V / ⌘V image/file events,
+without claiming that clipboard content is text. Ordinary text editing remains
 unchanged. Images still require Save file before uploading; clipboard failures
 never silently replace an image with a text draft.
 
@@ -187,3 +187,17 @@ growth below 32 MiB. It also transfers 100 small files and lists 10,000 entries.
 Temporary fixtures are removed after the host exits. Local timings are not LAN or
 physical-disk throughput guarantees. Abrupt process death can still leave hidden
 partials; safe crash scavenging remains an explicitly recorded issue.
+
+## Paste button and HTTP LAN addresses
+
+The Paste button uses `navigator.clipboard.read()`. This API requires a secure
+context and browser permission; an ordinary HTTP LAN IP is not a secure context.
+A user-initiated Ctrl+V / ⌘V paste event can still provide image bytes there.
+See the [Clipboard API specification](https://www.w3.org/TR/clipboard-apis/#navigator-interface).
+On the host use `http://localhost:PORT/` for button access; on HTTP LAN clients use
+the keyboard paste action. This change does not add HTTPS or read the host's OS
+clipboard on behalf of remote clients.
+
+Unavailable/denied/failed reads now show **Paste from clipboard**, with a specific
+reason and retry action. The text editor and Save file appear only after actual
+text is received. Images still open a preview and require confirmation.
