@@ -62,3 +62,6 @@ check. See docs/ACCEPTANCE.md for validation.
 Interface cleanup: network settings now use one Save changes action, without a
 duplicate apply button or address summary. QR hides unavailable fields and empty
 notices while preserving error recovery.
+
+File browsing now groups folders before files in both views, before search and
+pagination, preserving name order within each group.

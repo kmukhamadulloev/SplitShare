@@ -513,3 +513,26 @@ Exact validation:
 No new blockers. Physical mobile/OS checks previously recorded in ISSUES.md remain
 manual. Required delete/conflict confirmations, transfer recovery and file-action
 menus are retained because they serve distinct operations.
+
+## Folder-first browsing — 2026-10-03
+
+- PASS: Folders precede files in List and Grid while preserving the existing name
+  order within each group.
+- PASS: Grouping precedes search and pagination; mixed directory fixtures verify
+  the first page and the file-only second page, plus refresh behavior.
+- PASS: Existing 10,000-file browsing, selection and mutation regressions pass.
+- NOT APPLICABLE: Backend/API/security-policy changes; grouping is frontend display
+  behavior applied whenever a directory listing loads.
+
+Exact validation:
+
+- `bash scripts/check.sh`: PASS — frontend typecheck, two unit test files, build,
+  Rust formatting, Clippy and 62 Rust unit/integration/security tests.
+- `cargo build --locked -p splitshare`: PASS.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- directory.spec.ts browser.spec.ts`:
+  PASS — 18 passed across desktop/mobile Chromium, Firefox and WebKit; two existing
+  Chromium-only cancellation tests skipped in Firefox/WebKit.
+- `bash scripts/build-release.sh`: PASS, with updated embedded frontend.
+- `git diff --check`: PASS.
+
+No new blockers; existing physical-device/native OS release checks remain pending.

@@ -22,3 +22,20 @@ test('many-file directory remains searchable and responsive', async ({page},info
   await expect(page.getByRole('listitem',{name:'file-000000.txt',exact:true})).toBeAttached()
   console.log(JSON.stringify({project:info.project.name,entries:10000,renderedRows:rows,loadMs,searchMs}))
 })
+
+
+test('folders precede files in both views, search and pagination', async ({page}) => {
+  await page.goto('/')
+  await page.getByRole('button',{name:'Ordering',exact:true}).click()
+  const names = () => page.getByRole('listitem').evaluateAll(items => items.map(item => item.getAttribute('aria-label')))
+  await expect.poll(async () => (await names()).slice(0,3)).toEqual(['m-folder','z-folder','a-file-000.txt'])
+  await page.getByRole('button',{name:'Next page',exact:true}).click()
+  await expect.poll(names).toEqual(['a-file-098.txt','a-file-099.txt'])
+  await page.getByRole('button',{name:'Previous page',exact:true}).click()
+  await page.getByRole('button',{name:'Grid view',exact:true}).click()
+  await expect.poll(async () => (await names()).slice(0,3)).toEqual(['m-folder','z-folder','a-file-000.txt'])
+  await page.getByLabel('Search files').fill('-f')
+  await expect.poll(async () => (await names()).slice(0,3)).toEqual(['m-folder','z-folder','a-file-000.txt'])
+  await page.getByRole('button',{name:'Refresh files',exact:true}).click()
+  await expect.poll(async () => (await names()).slice(0,3)).toEqual(['m-folder','z-folder','a-file-000.txt'])
+})

@@ -31,6 +31,10 @@ Primary regions:
 
 ## File views
 
+Folders appear before files in List and Grid views. Existing name order is
+preserved within each group. Grouping happens before search and pagination and
+is reapplied on navigation, refresh and realtime listing updates.
+
 ### List
 
 Columns on desktop:

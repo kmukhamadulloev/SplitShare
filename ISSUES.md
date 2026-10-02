@@ -32,6 +32,8 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Browser
 
+- Folder-first display is implemented for List/Grid, search and pagination.
+
 - [ ] Verify the native file picker and long-press image Paste menu on physical
   iPadOS Safari and Android browsers, including screenshots and copied images.
   Browser emulation checks flow/bytes/accessibility, not OS menus or photo providers.

@@ -30,7 +30,8 @@ export const useFiles = defineStore('files', () => {
     try {
       const result = await request<{ path: string; entries: FileEntry[] }>(`/files?${new URLSearchParams({ path: destination })}`,'GET',undefined,listing.signal)
       if (current !== revision) return
-      entries.value = result.entries; path.value = result.path
+      // Group before filtering/pagination; stable sorting preserves name order within each kind.
+      entries.value = result.entries.sort((a, b) => Number(b.kind === 'directory') - Number(a.kind === 'directory')); path.value = result.path
     } catch (cause) { if (current === revision && (cause as Error).name !== 'AbortError') { entries.value = []; failed(cause) } }
     finally { if (current === revision) loading.value = false }
   }
