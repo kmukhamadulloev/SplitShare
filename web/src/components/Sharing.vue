@@ -141,15 +141,17 @@ async function leave() { try { await request('/session/leave','POST'); location.
   <button v-else-if="files.status?.share_mode === 'token_link'" class="icon-btn" aria-label="Leave share" @click="leave"><LogOut :size="19" /></button>
   <dialog ref="qrDialog" class="qr-dialog" aria-label="Share with QR" @cancel.prevent="close(qrDialog)">
     <h2>Share this folder</h2><p>Connect on the same trusted local or private network.</p>
+    <template v-if="candidates.length">
     <label for="share-address">Network address</label>
     <select id="share-address" v-model="selected"><option v-for="candidate in candidates" :key="candidate.url" :value="candidate.url">{{ candidate.interface }} · {{ candidate.address }} · {{ candidate.kind }}</option></select>
+    </template>
     <p v-if="selectedCandidate?.kind === 'loopback'" class="error">This address works only on this host. {{ candidates.some(candidate => candidate.kind !== 'loopback') ? 'Select a LAN or VPN address for another device.' : 'Enable All interfaces in Network settings to connect another device.' }}</p>
     <p v-if="qrLoading" role="status">Generating QR code…</p>
     <button v-if="selectedCandidate?.kind === 'loopback'" class="button" @click="networkSettings">Network settings</button>
     <canvas v-show="qrReady" ref="canvas" aria-label="Share QR code" class="qr-canvas" />
-    <input ref="urlInput" :value="selected" readonly aria-label="Share link" />
+    <input v-if="selected" ref="urlInput" :value="selected" readonly aria-label="Share link" />
     <p v-if="!qrLoading && !candidates.length">No compatible IPv4 address is available.</p>
-    <p v-if="error" class="error" role="alert">{{ error }}</p><p role="status">{{ notice }}</p>
+    <p v-if="error" class="error" role="alert">{{ error }}</p><p v-if="notice" role="status">{{ notice }}</p>
     <div class="dialog-actions"><button class="button" :disabled="qrLoading" @click="share">Refresh QR</button><button class="button" :disabled="!selected || !qrReady" @click="copy"><Copy :size="16" />Copy link</button><button class="button primary" @click="close(qrDialog)">Done</button></div>
   </dialog>
   <dialog ref="settingsDialog" class="settings-dialog" aria-label="Host settings" @cancel.prevent="close(settingsDialog)">
@@ -162,13 +164,13 @@ async function leave() { try { await request('/session/leave','POST'); location.
           <section v-show="tab === 'general'"><h3>Shared folder</h3><p>{{ setup?.folder_selected ? 'A folder is selected for sharing.' : 'No folder selected. Choose the folder whose contents you want to share.' }}</p><p>The native dialog opens on this computer. Its filesystem path stays private.</p><button type="button" class="button" :disabled="setupBusy || !setup" @click="chooseFolder"><FolderOpen :size="18" />Choose shared folder</button><p>Changing folders disconnects clients and cancels active transfers. Your choice is saved for the next launch.</p></section>
           <section v-show="tab === 'access'"><h3>Remote permissions</h3><p>These limits apply to remote clients. The host retains full control.</p><label v-for="permission in permissions" :key="permission.key" class="setting-toggle"><span>{{ permission.label }}</span><input v-model="model.permissions[permission.key]" type="checkbox" :aria-label="permission.label" /></label></section>
           <section v-show="tab === 'transfers'"><h3>Parallel uploads</h3><p>The server enforces this limit. Wait for the queue to finish before changing it.</p><label class="setting-toggle">Allow parallel uploads<input v-model="model.parallel_uploads_enabled" type="checkbox" /></label><label for="parallel-limit">Maximum parallel uploads</label><input id="parallel-limit" v-model.number="model.max_parallel_uploads" type="number" min="1" max="32" required /></section>
-          <section v-show="tab === 'network'"><h3>Network</h3><p>Choose where SplitShare listens. All interfaces enables LAN, Ethernet, hotspot and VPN access; token protection still applies.</p><label for="bind-interface">Interface</label><select id="bind-interface" v-model="bindIp" :disabled="setupBusy || !setup"><option v-for="item in setup?.interfaces" :key="item.address" :value="item.address">{{ item.label }} · {{ item.address }}</option></select><label for="bind-port">Port</label><input id="bind-port" v-model.number="port" type="number" min="1" max="65535" :disabled="setupBusy || !setup" /><p>Applying restarts the listener and disconnects clients and transfers. Changes are saved for the next launch.</p><button type="button" class="button primary" :disabled="setupBusy || !setup || !Number.isInteger(port) || port < 1 || port > 65535" @click="applyNetwork">Apply network settings</button><p v-for="candidate in candidates" :key="candidate.url">{{ candidate.interface }} · {{ candidate.address }} · {{ candidate.kind }}</p></section>
+          <section v-show="tab === 'network'"><h3>Network</h3><p>Choose where SplitShare listens. All interfaces enables LAN, Ethernet, hotspot and VPN access; token protection still applies.</p><label for="bind-interface">Interface</label><select id="bind-interface" v-model="bindIp" :disabled="setupBusy || !setup"><option v-for="item in setup?.interfaces" :key="item.address" :value="item.address">{{ item.label }} · {{ item.address }}</option></select><label for="bind-port">Port</label><input id="bind-port" v-model.number="port" type="number" min="1" max="65535" required :disabled="setupBusy || !setup" /><p>Applying restarts the listener and disconnects clients and transfers. Changes are saved for the next launch.</p></section>
           <section v-show="tab === 'security'"><h3>Security</h3><label for="access-mode">Access mode</label><select id="access-mode" v-model="model.share_mode"><option value="token_link">QR / link token</option><option value="open_lan">Open on LAN</option></select><p v-if="model.share_mode === 'open_lan'" class="error">Any reachable client can connect. Remote permissions still apply.</p><p>Rotating the link disconnects remote sessions. A new token is also generated on restart.</p><button type="button" class="button" :disabled="busy" @click="rotate"><RefreshCw :size="16" />Rotate share token</button></section>
         </div>
       </div>
       <p v-if="setupMessage" aria-label="Host setup status" aria-live="polite">{{ setupMessage }}</p><p v-if="nextAddress && !setupBusy"><a :href="nextAddress" class="button">Open updated address</a></p>
-      <p v-if="error" class="error" role="alert">{{ error }}</p><p role="status">{{ notice }}</p>
-      <div class="dialog-actions"><button type="button" class="button" :disabled="busy" @click="close(settingsDialog)">Cancel</button><button class="button primary" :disabled="busy || setupBusy || !model">Save changes</button></div>
+      <p v-if="error" class="error" role="alert">{{ error }}</p><p v-if="notice" role="status">{{ notice }}</p>
+      <div class="dialog-actions"><button type="button" class="button" :disabled="busy" @click="close(settingsDialog)">Cancel</button><button class="button primary" :disabled="busy || setupBusy || !model || !setup || !Number.isInteger(port) || port < 1 || port > 65535">Save changes</button></div>
     </form>
   </dialog>
 </template>

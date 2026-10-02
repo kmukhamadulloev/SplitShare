@@ -22,7 +22,7 @@ Previously saved host setup is restored on later launches.
    you want to share (for example, your `SplitShare` folder). The browser never
    receives the native filesystem path. Selection applies immediately and is saved.
 3. In **network**, select **All interfaces (LAN / VPN)**, choose a free port
-   (normally `8080`), and click **Apply network settings**. **Save changes** also
+   (normally `8080`), and click **Save changes**, which
    applies edited network fields. Token protection remains enabled by default.
 4. If the address/port changed, use **Open updated address** after reconnection is
    attempted, or reopen the browser from the tray. Network/root changes disconnect

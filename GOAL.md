@@ -58,3 +58,7 @@ Ctrl+V remains supported. Upload opens the native file picker on all devices;
 duplicate upload sheets, picker alternatives and automatic clipboard reads are
 removed. Physical iPad/Android paste-menu behavior remains a device acceptance
 check. See docs/ACCEPTANCE.md for validation.
+
+Interface cleanup: network settings now use one Save changes action, without a
+duplicate apply button or address summary. QR hides unavailable fields and empty
+notices while preserving error recovery.

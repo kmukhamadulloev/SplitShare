@@ -209,8 +209,8 @@ so Firefox does not treat the request as navigation and interrupt live SSE updat
 ## Host setup correction
 
 General settings now offers native **Choose shared folder**, and Network has real
-interface/port inputs. Network changes apply through their explicit button or
-**Save changes**. Fresh launches expose **Set up sharing** in the empty state.
+interface/port inputs. Network changes apply through the single **Save changes**
+action. Fresh launches expose **Set up sharing** in the empty state.
 The QR icon routes unconfigured hosts to folder setup; loopback QR has a Network
 settings shortcut. QR loading, generation errors and retries are explicit.
 See [HOST_SETUP.md](HOST_SETUP.md) for the complete workflow and persistence rules.
@@ -226,3 +226,8 @@ The existing navy palette, modal backdrop and focus handling are retained.
 Automatic clipboard reads, permission/retry controls, the mobile upload sheet and
 duplicate photo/file alternatives are removed. Queue and conflict dialogs remain.
 See TRANSFERS.md for detection, confirmation and browser limitations.
+
+Settings uses one Save changes action for access, transfer and network fields.
+The Network tab omits the duplicate address summary; QR owns share-address
+selection. Empty address/link fields and empty notice rows are hidden while QR
+discovery loads or fails; recovery controls remain available.

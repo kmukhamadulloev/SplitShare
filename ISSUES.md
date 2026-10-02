@@ -77,6 +77,9 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Host setup
 
+- Duplicate network apply controls and empty QR fields are removed; one Save
+  changes action retains network validation and persistence.
+
 - First-run folder/network controls and QR setup/retry are implemented; see
   [HOST_SETUP.md](docs/HOST_SETUP.md) and the correction acceptance evidence.
 - [ ] User-owned: native Windows/macOS folder picker validation. Linux/X11 portal

@@ -487,3 +487,29 @@ Physical iPadOS/Android native long-press image paste remains a manual device ch
 in ISSUES.md. Automated paste payloads and native chooser events do not validate
 OS menus or guarantee that every source app supplies image bytes. Windows/macOS
 native validation remains user-owned. No known failing automated criteria remain.
+
+## Remaining interface cleanup — 2026-10-03
+
+- PASS: Network settings has one Save changes action; the duplicate Apply network
+  settings button and repeated candidate-address list are removed.
+- PASS: Invalid ports disable saving. LAN/loopback changes persist across restart
+  through the remaining save action in all four browser configurations.
+- PASS: QR discovery failure hides empty address/link controls. Refresh recovery,
+  QR generation and the loopback Network settings shortcut remain functional.
+- PASS: Empty notice rows are omitted; settings, permissions, token rotation,
+  accessibility, selection/deletion and reconnection regressions pass.
+- NOT APPLICABLE: Backend/API changes; existing policy and contracts are retained.
+
+Exact validation:
+
+- `bash scripts/check.sh`: PASS — frontend typecheck, two unit test files, build,
+  Rust formatting, Clippy and 62 Rust unit/integration/security tests.
+- `cargo build --locked -p splitshare`: PASS, with updated embedded frontend.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- host-setup.spec.ts sharing.spec.ts production-ui.spec.ts`:
+  PASS — 32 tests across desktop/mobile Chromium, Firefox and WebKit; no skips.
+- `bash scripts/build-release.sh`: PASS.
+- `git diff --check`: PASS.
+
+No new blockers. Physical mobile/OS checks previously recorded in ISSUES.md remain
+manual. Required delete/conflict confirmations, transfer recovery and file-action
+menus are retained because they serve distinct operations.
