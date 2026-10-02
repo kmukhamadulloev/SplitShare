@@ -52,15 +52,9 @@ See docs/HOST_SETUP.md and the correction section of docs/ACCEPTANCE.md.
 Phase 08 backend hardening remains delivered. Windows/macOS native checks remain
 user-owned; no unexecuted checks are marked PASS.
 
-Clipboard follow-up: image/file paste now works inside the Clipboard API fallback
-dialog; mixed image/text clipboard items prioritize images. Regression coverage
-and validation are recorded in docs/ACCEPTANCE.md.
-
-The follow-up report identified HTTP LAN clipboard restrictions: Paste button
-failures now show an undetected state, not a text editor. Real browser clipboard
-button access and HTTP LAN behavior have dedicated regression coverage.
-
-Mobile upload follow-up implemented: a media/file selection sheet on narrow or
-coarse-pointer devices, a touch-and-hold paste area, and image confirmation with
-filename editing. Desktop selection, drag/drop and keyboard paste are preserved.
-Physical iPad/Android paste-menu behavior remains a device acceptance check.
+Clipboard refinement: Paste now always opens one editable modal. A native paste
+turns it into image confirmation or a text draft with filename/extension editing.
+Ctrl+V remains supported. Upload opens the native file picker on all devices;
+duplicate upload sheets, picker alternatives and automatic clipboard reads are
+removed. Physical iPad/Android paste-menu behavior remains a device acceptance
+check. See docs/ACCEPTANCE.md for validation.

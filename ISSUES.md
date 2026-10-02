@@ -32,21 +32,16 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Browser
 
-- [ ] Verify the new media picker and long-press image Paste menu on physical
+- [ ] Verify the native file picker and long-press image Paste menu on physical
   iPadOS Safari and Android browsers, including screenshots and copied images.
   Browser emulation checks flow/bytes/accessibility, not OS menus or photo providers.
-
-- Paste button cannot read clipboard directly on plain HTTP LAN origins because
-  the browser requires a secure context. The UI now explains this rather than
-  opening an undetected text draft. Use localhost on the host, Ctrl+V, or the
-  editable target's native long-press Paste action on LAN.
-- Clipboard image fallback and mixed image/text precedence are corrected; browser
-  regressions cover item-only file data and exact uploaded image bytes. Native
-  OS clipboard permission checks remain the manual follow-up below.
+- Paste uses native paste events on both localhost and HTTP LAN addresses. It no
+  longer reads the clipboard automatically or needs a Clipboard API permission.
+  Image/file payloads take precedence over accompanying text.
 
 - [ ] Run manual screen-reader checks and native mobile touch/keyboard checks; Phase 06 automated Chromium accessibility and viewport checks are local coverage.
 
-- [ ] Validate native Clipboard API permissions on Chromium, Firefox and Safari; deterministic paste fixtures cover Chromium/Firefox/WebKit.
+- [ ] Validate native clipboard copy permissions and paste behavior on Chromium, Firefox and Safari; deterministic paste fixtures cover Chromium/Firefox/WebKit.
 - [ ] Validate multi-file browser download UX; no ZIP generation is planned for v1.
 - [ ] Define preview allowlist by MIME and browser capability.
 

@@ -36,5 +36,5 @@ dialog { margin:auto; color:var(--ss-text); background:var(--ss-panel); border:1
 
 .pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; padding: .5rem; border-top: 1px solid var(--ss-line); font-size: .8rem; }
 
-.upload-options { display:grid; gap:10px; margin-top:20px; }.upload-options .button { justify-content:flex-start; min-height:56px; width:100%; gap:14px; text-align:left; }.upload-options svg { color:var(--ss-cyan); }.paste-target { min-height:132px; font-size:16px; border:1px dashed #64748b; background:#0b1224; touch-action:auto; }.paste-alternatives { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }.paste-dialog .paste-preview { display:block; margin:16px auto; }.upload-sheet .sheet-handle { display:block; height:5px; width:48px; border-radius:9px; background:#475569; margin:0 auto 14px; }
-@media(max-width:767px),(pointer:coarse) { .upload-sheet { width:min(560px,100%); max-width:100%; margin:auto auto 0; padding:20px; padding-bottom:max(20px,env(safe-area-inset-bottom)); border-radius:24px 24px 0 0; max-height:85dvh; }.upload-sheet .button,.paste-dialog .button { min-height:48px; }.paste-dialog input,.paste-dialog textarea { font-size:16px; } }
+.paste-target { min-height:132px; font-size:16px; border:1px dashed #64748b; background:#0b1224; touch-action:auto; }.paste-dialog .paste-preview { display:block; margin:16px auto; }
+@media(max-width:767px),(pointer:coarse) { .paste-dialog .button { min-height:48px; }.paste-dialog input,.paste-dialog textarea { font-size:16px; } }

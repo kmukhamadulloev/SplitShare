@@ -448,3 +448,42 @@ Exact validation:
   all four configurations.
 - `bash scripts/build-release.sh`: PASS with final embedded frontend.
 - `git diff --check`: PASS. Documentation and local Git checkpoint completed.
+
+## Unified paste workflow — 2026-10-03
+
+This refinement supersedes the preceding adaptive upload-sheet and automatic
+clipboard-read behavior.
+
+- PASS: Paste opens one neutral editable modal without accessing the Clipboard API,
+  including on an actual HTTP LAN origin. No permission/retry controls appear.
+- PASS: Pasted image data takes precedence over accompanying text and changes the
+  same modal to preview, editable filename and explicit Upload; saved bytes match.
+- PASS: Pasted text becomes an editable draft with filename/extension and Save file;
+  JSON receives a .json proposal. Cancel clears the draft without saving.
+- PASS: Real Chromium Ctrl+V imports an image without application clipboard reads;
+  cross-engine fixtures retain file/image/text paste and ordinary editing coverage.
+- PASS: Upload opens the native multiple-file chooser directly at phone and tablet
+  widths. Duplicate mobile sheets, media pickers and photo/file alternatives are
+  removed. Sequential image confirmation and unsupported-preview retention pass.
+- PASS: Empty/HTML-only payloads do not fabricate files, execute HTML or fetch image
+  URLs. Accessibility, focus restoration, queue/conflict and host setup regressions pass.
+- NOT APPLICABLE: New backend API/security policy; this refinement uses existing
+  upload contracts. The existing Rust integration/security regressions pass.
+
+Exact validation:
+
+- `bash scripts/check.sh`: PASS — frontend typecheck, two frontend unit test files,
+  production frontend build, `cargo fmt --check`, Clippy with warnings denied and
+  all 62 Rust unit/integration/security tests.
+- `cargo build --locked -p splitshare`: PASS; browser tests use the updated embedded UI.
+- `npm run test:e2e --prefix web -- --project desktop --project mobile`: PASS — 42 tests.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- --project firefox --project webkit`:
+  PASS — 38 tests; four explicit skips for Chromium-only CDP cancellation and real
+  clipboard-write permission automation. Combined browser result: 80 passed, four skipped.
+- `bash scripts/build-release.sh`: PASS; release binary embeds the new interface.
+- `git diff --check`: PASS. Mobile and Firefox desktop screenshots inspected.
+
+Physical iPadOS/Android native long-press image paste remains a manual device check
+in ISSUES.md. Automated paste payloads and native chooser events do not validate
+OS menus or guarantee that every source app supplies image bytes. Windows/macOS
+native validation remains user-owned. No known failing automated criteria remain.

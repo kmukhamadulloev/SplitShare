@@ -376,47 +376,33 @@ an existing test executable. This tool is not a production runtime dependency.
 Windows/macOS picker tests remain user-owned; headless Linux cannot validate a
 native picker and uses CLI root selection instead.
 
-## Clipboard image regression
+## Unified clipboard and upload regression
 
-`web/tests/clipboard.spec.ts` covers denied Clipboard API access followed by an
-image paste into the fallback textarea, item-only file data, byte-for-byte download
-verification after confirmation, and image/text items in either order. The existing
-browser suite retains file paste, ordinary text drafts, image confirmation and
-upload/conflict/cancellation coverage. These fixtures simulate clipboard formats
-and permission failures; they do not replace native OS clipboard validation.
+`web/tests/clipboard.spec.ts` verifies the neutral Paste modal without clipboard
+API access, image file-item precedence and same-modal transition, exact uploaded
+image bytes, editable text/JSON filename proposals, cancellation/reset, and safe
+empty/HTML-only handling. It checks an actual HTTP LAN origin and modal accessibility.
+Chromium also writes an image to its isolated clipboard and uses real Ctrl+V;
+Firefox/WebKit skip this permission-grant-dependent case. Native physical-device
+clipboard behavior remains manual.
 
-After building the frontend, rebuild the executable before browser tests because
-the test server runs `target/debug/splitshare` with embedded assets:
+`web/tests/mobile-upload.spec.ts` verifies direct native file-chooser events at
+phone and tablet widths, unrestricted multiple selection, sequential image
+confirmation/cancellation, exact uploaded bytes, touch paste guidance and original
+file retention when an image format cannot be previewed.
+
+Rebuild the embedded frontend before browser tests:
 
 ```bash
 bash scripts/check.sh
 cargo build --locked -p splitshare
-SPLITSHARE_BROWSER_MATRIX=1 npm run test:e2e --prefix web -- clipboard.spec.ts browser.spec.ts
+npm run test:e2e --prefix web -- --project desktop --project mobile
+SPLITSHARE_BROWSER_MATRIX=1 npm run test:e2e --prefix web -- --project firefox --project webkit
 ```
 
-The clipboard suite also clicks Paste after writing a PNG through the real
-Chromium Clipboard API (desktop and mobile emulation) and verifies the uploaded
-bytes. This runs in an isolated headless browser; no clipboard API mock is used.
-Firefox/WebKit skip that permission-grant test. A separate test visits the host's
-actual HTTP LAN interface and verifies blocked button access cannot become a text
-draft. Permission denial/retry remains a deterministic fixture across engines.
-
-## Adaptive mobile upload
-
-`web/tests/mobile-upload.spec.ts` exercises the narrow-screen sheet, real browser
-file-chooser events and accept filters, sequential image confirmation/cancellation,
-byte-for-byte upload/download, unrestricted file selection, editable fallback
-paste events, fallback photo selection, cancelled pickers, unsupported image
-preview retention, accessibility and wide touch-screen behavior. It also checks
-that wide fine-pointer desktop Upload still opens the picker directly.
-
-The browser tests provide files to the browser chooser; they do not automate an
-OS photo library. The long-press data fixture is delivered to the actual textarea;
-it does not simulate a native touch callout menu. Run physical iPadOS Safari and
-Android smoke checks: choose multiple photos, cancel one preview, upload another,
-copy a screenshot/image, long-press the paste area, and confirm the resulting file.
-If the browser exposes no image bytes, verify Choose photo/Browse files remains
-available. Test both portrait and tablet landscape widths.
-
-Generated `test-results/upload-sheet-*.png` and `upload-paste-*.png` screenshots
-remain ignored local artifacts. No new HTTP contract or server policy is added.
+Browser fixtures do not automate native OS photo libraries or long-press menus.
+On physical iPadOS Safari and Android: select multiple images through Upload,
+cancel one and confirm another, then copy a screenshot/image and long-press the
+Paste area. Confirm the detected image and filename. Repeat with text. If the OS
+provides no image bytes, cancel and use Upload. Check portrait and landscape.
+Generated `test-results/simple-paste-*.png` screenshots are ignored local artifacts.

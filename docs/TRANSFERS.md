@@ -111,11 +111,10 @@ Treat pasted files as normal uploads.
 
 Paste event creates a preview and filename proposal before upload. File/image
 representations take precedence over accompanying text. Paste events inspect both
-file lists and file items. If the Paste button cannot read the clipboard (including
-plain HTTP LAN pages), its neutral fallback dialog accepts Ctrl+V / ⌘V image/file events,
-without claiming that clipboard content is text. Ordinary text editing remains
-unchanged. Images still require Upload confirmation; clipboard failures
-never silently replace an image with a text draft.
+file lists and file items. The Paste button opens a neutral editable dialog on
+both localhost and HTTP LAN pages. Native keyboard or touch-menu paste supplies
+the content; no automatic clipboard read is attempted. Ordinary text editing
+remains unchanged. Images require Upload confirmation.
 
 ### Text
 
@@ -188,40 +187,26 @@ Temporary fixtures are removed after the host exits. Local timings are not LAN o
 physical-disk throughput guarantees. Abrupt process death can still leave hidden
 partials; safe crash scavenging remains an explicitly recorded issue.
 
-## Paste button and HTTP LAN addresses
+## Unified paste and upload controls
 
-The Paste button uses `navigator.clipboard.read()`. This API requires a secure
-context and browser permission; an ordinary HTTP LAN IP is not a secure context.
-A user-initiated Ctrl+V / ⌘V paste event can still provide image bytes there.
-See the [Clipboard API specification](https://www.w3.org/TR/clipboard-apis/#navigator-interface).
-On the host use `http://localhost:PORT/` for button access; on HTTP LAN clients use
-the keyboard or native long-press Paste action. This change does not add HTTPS
-or read the host's OS clipboard on behalf of remote clients.
+Paste always opens one modal with an editable Paste area. Desktop guidance uses
+Ctrl+V / ⌘V; touch layouts offer touch-and-hold Paste. Receiving image bytes changes
+that same modal into a preview with filename and Upload confirmation. Receiving
+text changes it into an editable text draft and filename (including extension),
+with Save file. JSON text receives a .json filename proposal. Cancel discards the
+draft. Text is limited to 2 MiB of UTF-8 bytes.
 
-Unavailable/denied/failed reads now show **Paste from clipboard**, with a specific
-reason and, when supported, a retry action. The text editor and Save file appear
-only after actual text is received. Images still open a preview and require confirmation.
+This flow handles native paste events and does not call `navigator.clipboard.read()`.
+It needs no automatic-read permission or HTTPS certificate for the Paste button.
+The browser/OS still determines which image/file representations native paste
+provides. Empty or unsupported payloads produce a local error, never a fabricated
+text draft. HTML is not inserted or executed; image URLs are not fetched.
+Keyboard paste outside an editable field remains available without clicking Paste.
 
-## Adaptive upload controls
-
-Upload opens a bottom sheet on narrow screens (up to 767 px) or coarse-pointer
-devices, including wide tablets. Photos & videos uses a multiple-file input with
-`accept="image/*,video/*"`; Browse files uses an unrestricted multiple-file input.
-The OS/browser owns the picker and decides which libraries/providers to offer.
-Cancelling a picker leaves the sheet or clipboard dialog available.
-
-Images selected through either picker or supplied through paste open **Upload
-image** with a preview, filename and Upload confirmation. Unsupported image
-previews retain the original file and explain that it can still be uploaded; no
-transcoding is introduced. Multiple images are confirmed individually. Other
-selected files and videos enter the normal streaming queue. Desktop Upload opens
-the unrestricted picker directly; drag/drop retains its existing direct queue.
-
-Paste from clipboard tries the browser Clipboard API when available. Otherwise
-an editable textarea offers the native touch-and-hold Paste menu, with Choose
-photo and Browse files beside it. Desktop instructions use Ctrl+V / ⌘V. Only
-received text opens the text draft; received image bytes open image confirmation.
-HTML is not inserted or executed, and image URLs are not automatically fetched.
-Safari's native callout menu is reached through the editable target; no synthetic
-keystrokes, automatic `execCommand('paste')` or permission bypass are required.
-Native image paste varies by browser/source and remains a physical-device check.
+Upload opens one unrestricted multiple-file picker on every device. The OS/browser
+owns its providers. There is no intermediate upload sheet or duplicate picker in
+the Paste dialog. Selected images use the image confirmation form, one at a time;
+unsupported previews retain the original uploadable bytes. Other files enter the
+normal streaming queue. Drag/drop retains its direct queue behavior. Queue/retry
+and file-conflict dialogs remain necessary for recovery and overwrite protection.
+No HTTP contract, backend policy or streaming behavior changes.
