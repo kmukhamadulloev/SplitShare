@@ -59,6 +59,9 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Transfers
 
+- Upload logs now identify transfer/stage/bytes/timings and safe error categories.
+  Storage Io and HTTP body errors still do not expose exact OS/network root causes.
+
 - [ ] Validate native Windows/macOS upload publication and cancellation at runtime.
 - [ ] Run multi-device LAN/VPN transfer stress tests for release acceptance; the Linux 1 GiB upload/download benchmark is automated.
 - Runtime upload limits now update through host-only settings when the transfer queue is idle.

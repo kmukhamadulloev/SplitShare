@@ -70,7 +70,7 @@ pub struct UploadRequest {
 enum Message {
     Data(Vec<u8>),
     Finish,
-    Failed,
+    Failed(io::ErrorKind),
     IdleTimeout,
 }
 struct DisconnectGuard {
@@ -89,6 +89,9 @@ impl Drop for DisconnectGuard {
             && !record.transfer.state.terminal()
             && record.transfer.state != TransferState::Publishing
         {
+            tracing::info!(transfer_id = %self.id, state = ?record.transfer.state,
+                bytes_written = record.transfer.transferred_bytes,
+                reason = "handler_dropped", "Upload handler ended before publication");
             record.cancel.cancel();
             if record.transfer.state == TransferState::Queued {
                 record.transfer.state = TransferState::Cancelled;
@@ -221,6 +224,8 @@ impl TransferManager {
         if record.transfer.state.terminal() || record.transfer.state == TransferState::Publishing {
             return Err(TransferError::TooLate);
         }
+        tracing::info!(transfer_id = %id, state = ?record.transfer.state,
+            bytes_written = record.transfer.transferred_bytes, "Upload cancellation requested");
         record.cancel.cancel();
         Ok(())
     }
@@ -284,29 +289,48 @@ impl TransferManager {
         B: AsRef<[u8]>,
     {
         let cancel = self.register(&request)?;
+        let queued = Instant::now();
+        let span = tracing::info_span!("upload", transfer_id = %request.id,
+            expected_bytes = ?request.total, conflict_policy = ?request.policy,
+            concurrency_limit = self.limit());
+        span.in_scope(|| tracing::info!("Upload accepted"));
         let _disconnect = DisconnectGuard {
             manager: self.clone(),
             id: request.id.clone(),
         };
         let permit = tokio::select! {
-            _ = cancel.cancelled() => { self.update(&request.id,TransferState::Cancelled,0,None,None,true); return Err(TransferError::Cancelled); },
+            _ = cancel.cancelled() => {
+                span.in_scope(|| tracing::info!(stage = "queue", elapsed_ms = queued.elapsed().as_millis() as u64, "Upload cancelled"));
+                self.update(&request.id,TransferState::Cancelled,0,None,None,true); return Err(TransferError::Cancelled);
+            },
             permit = tokio::time::timeout(Duration::from_secs(60),self.0.slots.clone().acquire_owned()) => match permit {
                 Ok(permit) => permit.map_err(|_| TransferError::Cancelled)?,
                 Err(_) => {
                     self.update(&request.id,TransferState::Failed,0,None,Some("UPLOAD_QUEUE_TIMEOUT"),true);
-                    tracing::warn!("Upload queue wait exceeded 60 seconds; retry when capacity is available");
+                    span.in_scope(|| tracing::warn!(transfer_id = %request.id, expected_bytes = ?request.total,
+                        stage = "queue", failure = "UPLOAD_QUEUE_TIMEOUT",
+                        timeout_seconds = 60, queue_wait_ms = queued.elapsed().as_millis() as u64,
+                        bytes_written = 0, "Upload queue deadline exceeded"));
                     return Err(TransferError::QueueTimeout);
                 }
             },
         };
+        let queue_wait_ms = queued.elapsed().as_millis() as u64;
+        let worker_span = span.clone();
+        let worker_dispatch = tracing::dispatcher::get_default(Clone::clone);
         let (sender, mut receiver) = mpsc::channel::<Message>(2);
         let manager = self.clone();
         let worker_cancel = cancel.clone();
         let id = request.id.clone();
         let request_id = id.clone();
         let task = tokio::task::spawn_blocking(move || {
+            let _subscriber = tracing::dispatcher::set_default(&worker_dispatch);
+            let _entered = worker_span.enter();
             let _permit = permit;
             let started = Instant::now();
+            let mut stage = "prepare";
+            let mut input_error_kind = None;
+            tracing::info!(queue_wait_ms, "Upload worker started");
             let result = (|| -> Result<VirtualPath, TransferError> {
                 if worker_cancel.is_cancelled() {
                     return Err(TransferError::Cancelled);
@@ -318,13 +342,16 @@ impl TransferManager {
                     .begin_upload(&request.path, request.total)?;
                 manager.update(&id, TransferState::Uploading, 0, Some(started), None, true);
                 let mut last_event = Instant::now();
+                let mut last_log = Instant::now();
                 loop {
+                    stage = "receive";
                     let message = receiver.blocking_recv();
                     if worker_cancel.is_cancelled() {
                         return Err(TransferError::Cancelled);
                     }
                     match message {
                         Some(Message::Data(bytes)) => {
+                            stage = "write";
                             upload.write_chunk(&bytes)?;
                             let emit = last_event.elapsed() >= Duration::from_millis(100);
                             manager.update(
@@ -335,13 +362,22 @@ impl TransferManager {
                                 None,
                                 emit,
                             );
+                            if last_log.elapsed() >= Duration::from_secs(30) {
+                                tracing::debug!(
+                                    bytes_written = upload.bytes_written(),
+                                    elapsed_ms = started.elapsed().as_millis() as u64,
+                                    "Upload progress"
+                                );
+                                last_log = Instant::now();
+                            }
                             if emit {
                                 last_event = Instant::now();
                             }
                         }
                         Some(Message::Finish) => break,
                         Some(Message::IdleTimeout) => return Err(TransferError::IdleTimeout),
-                        Some(Message::Failed) => {
+                        Some(Message::Failed(kind)) => {
+                            input_error_kind = Some(kind);
                             return Err(TransferError::Storage(StorageError::UploadFailed));
                         }
                         None => return Err(TransferError::Cancelled),
@@ -362,6 +398,11 @@ impl TransferManager {
                     record.transfer.state = TransferState::Publishing;
                     manager.event("transfer.updated", &record.transfer);
                 }
+                stage = "publish";
+                tracing::debug!(
+                    bytes_written = upload.bytes_written(),
+                    "Upload publication started"
+                );
                 Ok(upload.publish(request.policy)?)
             })();
             let bytes = manager
@@ -372,6 +413,12 @@ impl TransferManager {
                 .unwrap_or(0);
             match result {
                 Ok(path) => {
+                    tracing::info!(
+                        bytes_written = bytes,
+                        elapsed_ms = started.elapsed().as_millis() as u64,
+                        queue_wait_ms,
+                        "Upload completed"
+                    );
                     manager.0.files.changed(&path);
                     {
                         let mut records = manager
@@ -399,10 +446,20 @@ impl TransferManager {
                         TransferError::IdleTimeout => "UPLOAD_IDLE_TIMEOUT",
                         _ => "UPLOAD_FAILED",
                     };
-                    tracing::warn!(
-                        failure,
-                        "Upload did not publish; inspect connection, destination capacity or conflict policy"
-                    );
+                    if error == TransferError::Cancelled {
+                        tracing::info!(
+                            stage,
+                            bytes_written = bytes,
+                            elapsed_ms = started.elapsed().as_millis() as u64,
+                            "Upload cancelled"
+                        );
+                    } else {
+                        tracing::warn!(transfer_id = %id, expected_bytes = ?request.total,
+                            conflict_policy = ?request.policy, concurrency_limit = manager.limit(),
+                            failure, stage, cause = ?error, input_error_kind = ?input_error_kind,
+                            bytes_written = bytes, elapsed_ms = started.elapsed().as_millis() as u64,
+                            queue_wait_ms, idle_timeout_seconds = 60, "Upload failed before publication");
+                    }
                     manager.update(
                         &id,
                         if error == TransferError::Cancelled {
@@ -438,7 +495,7 @@ impl TransferManager {
                 }
                 Ok(None) => Message::Finish,
                 Err(_) => Message::IdleTimeout,
-                _ => Message::Failed,
+                Ok(Some(Err(error))) => Message::Failed(error.kind()),
             };
             tokio::select! { _ = cancel.cancelled() => {}, _ = sender.send(message) => {} }
             break;
@@ -446,13 +503,25 @@ impl TransferManager {
         drop(sender);
         match task.await {
             Ok(result) => result,
-            Err(_) => {
+            Err(error) => {
                 let bytes = self
                     .snapshot()
                     .into_iter()
                     .find(|transfer| transfer.id == request_id)
                     .map(|transfer| transfer.transferred_bytes)
                     .unwrap_or(0);
+                span.in_scope(|| {
+                    tracing::error!(
+                        transfer_id = %request_id,
+                        stage = "worker",
+                        failure = "WORKER_FAILED",
+                        worker_panicked = error.is_panic(),
+                        worker_cancelled = error.is_cancelled(),
+                        bytes_written = bytes,
+                        elapsed_ms = queued.elapsed().as_millis() as u64,
+                        "Upload worker terminated unexpectedly"
+                    )
+                });
                 self.update(
                     &request_id,
                     TransferState::Failed,

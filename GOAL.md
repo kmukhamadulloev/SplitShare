@@ -69,3 +69,6 @@ pagination, preserving name order within each group.
 Upload keep-awake is opt-in through the transfer bar: native wake lock where
 available, bundled silent-video fallback on HTTP. Actual sleep prevention on
 physical phones/tablets remains device-dependent and must be manually verified.
+
+Upload diagnostics now correlate lifecycle and stage-specific failures by transfer
+ID, with byte counts, timings and safe typed causes. Debug progress is throttled.

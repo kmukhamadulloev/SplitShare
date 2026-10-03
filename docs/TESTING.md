@@ -406,3 +406,15 @@ cancel one and confirm another, then copy a screenshot/image and long-press the
 Paste area. Confirm the detected image and filename. Repeat with text. If the OS
 provides no image bytes, cancel and use Upload. Check portrait and landscape.
 Generated `test-results/simple-paste-*.png` screenshots are ignored local artifacts.
+
+Upload logging regression: `cargo test --locked -p splitshare-application --test
+transfer_logging upload_logs` captures real success, interrupted-input, conflict and
+cancellation logs. It checks correlation/stage/byte fields and verifies that
+paths, transfer keys and injected sensitive I/O error text are absent. Existing
+paused-time tests verify idle/queue deadlines and cleanup.
+
+`python3 scripts/test-upload-logging.py` starts isolated release hosts and checks
+real HTTP completion, incomplete bodies and conflicts at WARN and DEBUG verbosity.
+It verifies correlation fields even when INFO spans are filtered out, partial-file
+cleanup and absence of private paths/keys. Requires a built release executable
+and free loopback port 43129.

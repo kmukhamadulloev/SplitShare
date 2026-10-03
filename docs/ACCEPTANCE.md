@@ -572,3 +572,36 @@ Exact validation:
 Actual automatic-lock prevention on physical Android/iPadOS remains unverified and
 tracked in ISSUES.md. Headless playback/native mocks cannot establish OS sleep
 behavior. The fallback cannot guarantee uploads while manually locked or backgrounded.
+
+## Detailed upload logs — 2026-10-03
+
+- PASS: Accepted/started/completed uploads correlate through a validated transfer ID,
+  expected byte count, conflict policy and concurrency limit.
+- PASS: Failure logs identify receive/write/prepare/publish/queue/worker stage,
+  successfully written bytes, timings and safe typed causes. WARN-only output
+  retains transfer ID and expected size without relying on filtered INFO spans.
+- PASS: Cancellation and dropped handlers are distinct INFO events. Progress is
+  throttled to at most once per 30 seconds of writes at DEBUG level; publication
+  also has a DEBUG event. Existing failure codes/deadlines remain unchanged.
+- PASS: Log capture and real HTTP checks verify absence of paths, keys and raw error
+  text, plus interrupted-upload cleanup and conflict handling.
+- NOT APPLICABLE: Browser E2E changes; no frontend, API response or upload policy
+  change. Existing HTTP/security integration tests cover the affected lifecycle.
+
+Exact validation:
+
+- `bash scripts/check.sh`: PASS — 63 Rust unit/integration/security tests, both
+  frontend unit files, frontend typecheck/build, formatting and Clippy.
+- `cargo build --locked -p splitshare`: PASS.
+- `bash scripts/build-release.sh`: PASS.
+- `python3 scripts/test-upload-logging.py`: PASS — isolated release hosts verify
+  successful upload, interrupted body, conflict, cleanup and privacy under both
+  WARN-only and DEBUG filters.
+- `git diff --check`: PASS.
+
+The logging regression runs in a dedicated integration executable with a global
+subscriber, avoiding scoped-subscriber callsite filtering interference from parallel
+tests. Runtime WARN-only smoke exposed missing INFO-span context; failure entries
+now carry critical fields directly, and both filters pass. No failing checks remain.
+Storage Io and HTTP UnexpectedEof remain safe categories, not proof of a specific
+OS/network root cause. Existing physical-device release checks remain pending.

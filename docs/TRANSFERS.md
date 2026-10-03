@@ -239,3 +239,38 @@ were generated with FFmpeg, a development tool only:
 ffmpeg -f lavfi -i color=c=black:s=16x16:r=2 -t 1 -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart web/public/media/keep-awake.mp4
 ffmpeg -f lavfi -i color=c=black:s=16x16:r=2 -t 1 -an -c:v libvpx-vp9 web/public/media/keep-awake.webm
 ```
+
+## Upload diagnostics
+
+Default INFO logs include accepted requests, worker start, completion and
+cancellation. Each accepted upload has an `upload` span containing `transfer_id`,
+`expected_bytes` (None if unknown), `conflict_policy` and `concurrency_limit`.
+The ID correlates logs with transfer snapshots; it is not the cancellation key.
+Warnings carry their transfer ID and expected size directly, so they remain
+useful when `RUST_LOG=warn` disables the INFO span.
+
+Failures report `stage` (prepare, receive, write, publish, queue or worker),
+`bytes_written`, elapsed/queue-wait milliseconds, the existing failure code and
+a typed cause. Receive errors include only their safe I/O error kind; idle and
+queue deadlines are identified separately. Cancellation requests and dropped
+handlers are logged at INFO, not as unexplained warnings. A dropped handler may
+mean disconnection, session invalidation or shutdown; it does not prove screen
+locking. Worker panics/cancellation are identified without panic payloads.
+
+Enable additional progress/publication diagnostics with:
+
+```bash
+RUST_LOG=splitshare=info,splitshare_application::transfers=debug ./target/release/splitshare --open
+```
+
+Progress is logged at most once every 30 seconds when chunks are written; this
+is not a periodic heartbeat during a stalled input. Times after worker start
+exclude queue wait. `bytes_written` counts successfully acknowledged writes, not
+bytes queued in transport memory. No per-chunk log flood is introduced.
+
+Logs omit filenames, native/virtual paths, transfer keys, cookies, link tokens,
+file contents and raw I/O error text. Storage errors retain their safe domain
+category: `Storage(Io)` at `write` identifies disk-write failure but cannot alone
+distinguish a full disk from every other OS error. HTTP body errors currently
+map to `UnexpectedEof`; this identifies transport failure, not its mobile/Wi-Fi
+root cause. No timeout, retry or upload API behavior is changed.
