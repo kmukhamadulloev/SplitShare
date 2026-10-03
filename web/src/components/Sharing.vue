@@ -170,6 +170,7 @@ async function leave() { try { await request('/session/leave','POST'); location.
   <dialog ref="settingsDialog" class="settings-dialog" aria-label="Host settings" @cancel.prevent="close(settingsDialog)">
     <form @submit.prevent="save">
       <h2>Settings</h2><p>SplitShare host configuration</p>
+      <div class="settings-body">
       <div class="settings-layout">
         <nav class="settings-tabs" aria-label="Settings sections"><button v-for="section in ['general','access','transfers','network','security','logging']" :key="section" type="button" :aria-pressed="tab === section" @click="tab = section">{{ section === 'access' ? 'Access & permissions' : section }}</button></nav>
         <div v-if="!model" class="settings-content" role="status">{{ busy ? 'Loading settings…' : 'Settings could not be loaded. Close and try again.' }}</div>
@@ -184,6 +185,7 @@ async function leave() { try { await request('/session/leave','POST'); location.
       </div>
       <p v-if="setupMessage" aria-label="Host setup status" aria-live="polite">{{ setupMessage }}</p><p v-if="nextAddress && !setupBusy"><a :href="nextAddress" class="button">Open updated address</a></p>
       <p v-if="error" class="error" role="alert">{{ error }}</p><p v-if="notice" role="status">{{ notice }}</p>
+      </div>
       <div class="dialog-actions"><button type="button" class="button" :disabled="busy" @click="close(settingsDialog)">Cancel</button><button class="button primary" :disabled="busy || setupBusy || !model || !setup || !Number.isInteger(port) || port < 1 || port > 65535">Save changes</button></div>
     </form>
   </dialog>

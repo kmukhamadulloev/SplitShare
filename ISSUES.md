@@ -98,3 +98,6 @@ This file tracks real unresolved engineering work. Remove items only when verifi
   cancel/select was exercised with a real native dialog; Wayland remains manual.
 - Linux desktop selection needs an available XDG portal/backend. Headless hosts
   use `--root`; picker cancellation/unavailability leaves the existing share intact.
+
+- Settings frame size is stable across tabs; long content scrolls inside the
+  viewport-bounded dialog with persistent heading and save/cancel actions.

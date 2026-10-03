@@ -250,3 +250,7 @@ severity, source, message and structured fields. Latest entries appear first;
 search, severity filtering, Refresh and Clear logs operate on the bounded history.
 Live SSE notifications coalesce snapshot refreshes; closing cancels network work
 and restores focus. Errors and disconnected/reconnecting state remain visible.
+
+Settings keeps a 900 × 640 px desktop frame, capped to the viewport with a 16 px
+outer margin. Mobile settings fills the viewport. Switching sections does not
+resize the frame; the body scrolls while the heading and action buttons stay visible.

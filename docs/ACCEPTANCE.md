@@ -636,3 +636,26 @@ implementation. Existing physical-device and native-platform checks remain manua
 - `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- logs.spec.ts sharing.spec.ts host-setup.spec.ts production-ui.spec.ts`:
   PASS — 40 tests across desktop/mobile Chromium, Firefox and WebKit.
 - `git diff --check`: PASS.
+
+## Stable Settings frame — 2026-10-04
+
+- PASS: Desktop Settings stays 900 × 640 px across all six sections, capped to the
+  available viewport. Mobile retains its full-screen frame.
+- PASS: Content scrolls inside the frame; heading and Save/Cancel stay visible,
+  including 1024 × 500 and 390 × 600 viewports.
+- PASS: Existing sharing and nested log dialogs retain their behavior.
+- NOT APPLICABLE: New API/backend/security behavior; this is a layout-only fix.
+
+Validation:
+- `bash scripts/check.sh`: PASS (66 Rust tests, frontend unit tests, typecheck,
+  build, Rust formatting and Clippy).
+- `cargo build --locked -p splitshare`: PASS.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- settings-size-check.spec.ts sharing.spec.ts logs.spec.ts`:
+  all 16 existing sharing/log tests passed. The temporary dimension probe initially
+  sampled the opening animation; rerunning that probe with reduced motion passed
+  all four browser configurations. Probe checked every section at normal, short
+  desktop and narrow mobile sizes; temporary probe removed after verification.
+- `git diff --check`: PASS.
+
+Existing physical-device/native-platform checks remain manual; no new blockers.
+- `bash scripts/build-release.sh`: PASS with updated embedded frontend.
