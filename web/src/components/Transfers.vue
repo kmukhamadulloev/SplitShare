@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Upload, ClipboardPaste, X, RotateCcw, ListChecks } from '@lucide/vue'
+import KeepAwake from './KeepAwake.vue'
 import { useUploads, type QueueItem } from '../app/uploads'
 import { showDialog, closeDialog } from '../app/dialogs'
 import { formatBytes } from '../app/file-types'
@@ -126,6 +127,7 @@ defineExpose({ drop })
     <button class="summary-open" aria-label="Open upload queue" @click="show(queue)"><ListChecks :size="20" /><span>{{ uploads.items.length }} files · {{ uploads.progress.active }} active · {{ uploads.progress.queued }} queued<span v-if="uploads.items.some(item => item.state === 'failed')"> · {{ uploads.items.filter(item => item.state === 'failed').length }} failed</span><span v-if="uploads.items.some(item => item.state === 'cancelled')"> · {{ uploads.items.filter(item => item.state === 'cancelled').length }} cancelled</span></span><strong>{{ uploads.progress.percent === null ? 'Unknown total' : `${uploads.progress.percent.toFixed(0)}%` }}</strong></button>
     <progress v-if="uploads.progress.percent !== null" :value="uploads.progress.percent" max="100" aria-label="Aggregate upload progress"></progress>
     <div class="summary-meta">{{ bytes(uploads.progress.transferred) }} / {{ bytes(uploads.progress.total) }}<span>{{ bytes(uploads.speed) }}/s<span v-if="uploads.eta !== null"> · {{ uploads.eta }}s remaining</span></span></div>
+    <KeepAwake :active="uploads.items.some(item => ['queued','uploading','publishing'].includes(item.state))" />
   </section>
   </Teleport>
   <p v-if="uploads.problem" class="transfer-problem" role="alert">{{ uploads.problem }} <button aria-label="Dismiss transfer message" @click="uploads.problem = ''">×</button></p>

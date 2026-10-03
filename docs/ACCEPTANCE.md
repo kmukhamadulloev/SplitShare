@@ -536,3 +536,39 @@ Exact validation:
 - `git diff --check`: PASS.
 
 No new blockers; existing physical-device/native OS release checks remain pending.
+
+## Upload keep-awake — 2026-10-03
+
+- PASS: Pending uploads expose an opt-in Keep screen awake action in the transfer
+  bar, with no additional modal or automatic playback.
+- PASS: Native API requests use a user tap and only report active after acquisition.
+  Rejection exposes a video retry; native lifecycle tests use deterministic mocks.
+- PASS: Bundled MP4/WebM fallback plays silently and inline, including on an actual
+  insecure HTTP LAN origin, with no external media dependency. Its status explicitly
+  does not promise sleep prevention. Media metadata confirms no audio track.
+- PASS: Manual stop and batch completion pause playback/release locks; page hiding
+  releases the native lock, and returning requires a new tap. Denied playback does
+  not claim success. Component teardown and non-pending queues also stop the helper.
+- PASS: Existing upload, cancellation, conflict, accessibility and UI regressions pass.
+- NOT APPLICABLE: New API/backend timeout/security policy; all existing limits remain.
+
+Exact validation:
+
+- `bash scripts/check.sh`: PASS — typecheck, two frontend unit files, frontend build,
+  Rust formatting, Clippy and all 62 Rust unit/integration/security tests.
+- `npm run build --prefix web` and `cargo build --locked -p splitshare`: PASS after
+  final capability-detection/error-logging adjustment.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- keep-awake.spec.ts browser.spec.ts production-ui.spec.ts`:
+  37 passed, two existing Chromium-only cancellation skips, one Firefox test assertion
+  failure: Firefox plays inline but does not expose the playsInline JS property.
+  The assertion now checks the actual playsinline attribute. All 26 unrelated
+  upload/UI regression cases passed on the final production code.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- keep-awake.spec.ts`:
+  PASS — all 16 final keep-awake cases, including added actual HTTP LAN checks.
+  Combined final coverage: 42 passed, two explicitly skipped; no unresolved failure.
+- `bash scripts/build-release.sh`: PASS with final embedded interface/media.
+- `git diff --check`: PASS. Desktop transfer-bar screenshot inspected.
+
+Actual automatic-lock prevention on physical Android/iPadOS remains unverified and
+tracked in ISSUES.md. Headless playback/native mocks cannot establish OS sleep
+behavior. The fallback cannot guarantee uploads while manually locked or backgrounded.

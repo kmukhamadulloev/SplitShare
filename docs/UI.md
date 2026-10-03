@@ -235,3 +235,7 @@ Settings uses one Save changes action for access, transfer and network fields.
 The Network tab omits the duplicate address summary; QR owns share-address
 selection. Empty address/link fields and empty notice rows are hidden while QR
 discovery loads or fails; recovery controls remain available.
+
+The transfer bar offers an optional Keep screen awake control while uploads are
+pending. Its status distinguishes a native wake lock from best-effort video
+playback and exposes failure/interruption inline, without another dialog.

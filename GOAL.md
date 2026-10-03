@@ -65,3 +65,7 @@ notices while preserving error recovery.
 
 File browsing now groups folders before files in both views, before search and
 pagination, preserving name order within each group.
+
+Upload keep-awake is opt-in through the transfer bar: native wake lock where
+available, bundled silent-video fallback on HTTP. Actual sleep prevention on
+physical phones/tablets remains device-dependent and must be manually verified.

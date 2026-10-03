@@ -32,6 +32,10 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Browser
 
+- [ ] Verify the opt-in video keep-awake fallback on physical iPadOS/Android over
+  HTTP, including automatic screen timeout, low-power mode and app switching.
+  Playback success does not prove sleep prevention.
+
 - Folder-first display is implemented for List/Grid, search and pagination.
 
 - [ ] Verify the native file picker and long-press image Paste menu on physical

@@ -210,3 +210,32 @@ unsupported previews retain the original uploadable bytes. Other files enter the
 normal streaming queue. Drag/drop retains its direct queue behavior. Queue/retry
 and file-conflict dialogs remain necessary for recovery and overwrite protection.
 No HTTP contract, backend policy or streaming behavior changes.
+
+## Keeping the screen awake
+
+During queued/running/publishing uploads, the transfer bar offers **Keep screen
+awake**. It is opt-in and starts directly from a user tap. Secure contexts prefer
+the native Screen Wake Lock API. HTTP clients use a tiny, silent, looping inline
+video bundled with SplitShare; no external media requests or new runtime are used.
+If a native request fails, another tap can try video playback.
+
+Only an acquired native lock is labelled active. Video playback is labelled a
+fallback that may not prevent device locking. Playback/permission failures remain
+visible and do not affect upload correctness. Stop, a finished/failed/cancelled
+batch, component teardown or page hiding releases the lock and pauses the video.
+Returning to the page requires another tap; there is no automatic playback.
+Manual locking, background suspension and low-power restrictions are not bypassed.
+Uploads still have the existing idle timeout and retry-from-zero policy.
+
+Physical iPadOS/Android HTTP testing is required to establish whether their
+browsers actually suppress automatic sleep. Automated playback tests cannot prove
+that. Prefer increasing the device timeout when the fallback is ineffective.
+
+The first-party media assets in `web/public/media` are one-second 16×16 black
+clips at two frames per second with no audio track (H.264 MP4 and VP9 WebM). They
+were generated with FFmpeg, a development tool only:
+
+```bash
+ffmpeg -f lavfi -i color=c=black:s=16x16:r=2 -t 1 -an -c:v libx264 -pix_fmt yuv420p -movflags +faststart web/public/media/keep-awake.mp4
+ffmpeg -f lavfi -i color=c=black:s=16x16:r=2 -t 1 -an -c:v libvpx-vp9 web/public/media/keep-awake.webm
+```
