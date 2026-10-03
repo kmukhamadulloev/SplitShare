@@ -274,3 +274,13 @@ category: `Storage(Io)` at `write` identifies disk-write failure but cannot alon
 distinguish a full disk from every other OS error. HTTP body errors currently
 map to `UnexpectedEof`; this identifies transport failure, not its mobile/Wi-Fi
 root cause. No timeout, retry or upload API behavior is changed.
+
+The host can now choose Standard/Detailed/Warnings logging in Settings → Logging,
+then Save changes, without restarting or disconnecting uploads. Open logs displays
+live diagnostics captured since startup at the selected verbosity (older filtered
+messages cannot be recovered). The last 500 entries are held in memory; no log
+files or arbitrary native filesystem reads are exposed. Clear logs removes this
+history only, not already emitted console output. Restart restores RUST_LOG or the
+default filter and clears history. Listener reconfiguration retains both history
+and the runtime filter. The viewer uses approved message/field lists; unknown
+message text is replaced and raw error/path/header fields are omitted.

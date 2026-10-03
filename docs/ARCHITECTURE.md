@@ -246,3 +246,10 @@ Host setup uses application `HostControl` snapshots and a bounded command channe
 HTTP never receives or returns native root paths. The composition root opens the
 native picker through the platform adapter, reconfigures listeners/sandboxes and
 persists native-only startup settings. See [HOST_SETUP.md](HOST_SETUP.md).
+
+Host diagnostics use an application-owned bounded history/control service. The
+native composition root installs the tracing capture/reload adapter and shares
+one service across listener restarts. Capture includes only approved messages and
+structured fields. Axum provides host-only snapshot/config/clear routes and SSE
+notifications using the existing stream limit. Vue consumes this service through
+Settings and a log modal; it never reads native log files or shell output.

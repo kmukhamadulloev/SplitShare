@@ -114,3 +114,5 @@ impl FileService {
 pub mod sessions;
 
 pub mod host_control;
+
+pub mod diagnostics;

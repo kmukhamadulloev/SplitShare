@@ -27,6 +27,7 @@ use tokio_util::sync::CancellationToken;
 
 #[derive(Clone)]
 pub struct ServerState {
+    pub diagnostics: splitshare_application::diagnostics::Diagnostics,
     pub files: Option<FileService>,
     pub host_control: Option<splitshare_application::host_control::HostControl>,
     pub transfers: Option<splitshare_application::transfers::TransferManager>,
@@ -37,7 +38,7 @@ pub struct ServerState {
     pub authorities: Vec<String>,
     pub dev_origin: Option<String>,
     pub shutdown: CancellationToken,
-    streams: Arc<Semaphore>,
+    pub(crate) streams: Arc<Semaphore>,
     downloads: Arc<Semaphore>,
 }
 impl ServerState {
@@ -63,6 +64,7 @@ impl ServerState {
             .expect("validated host settings")
         });
         Self {
+            diagnostics: Default::default(),
             files,
             host_control: None,
             transfers,

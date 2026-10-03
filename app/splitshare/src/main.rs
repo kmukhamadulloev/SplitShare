@@ -1,14 +1,10 @@
 //! Native composition root. The OS event loop stays on the main thread.
 mod host;
+mod logging;
 use splitshare_platform::desktop::{self, Status};
 use tokio::sync::{mpsc, watch};
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "splitshare=info".into()),
-        )
-        .init();
+    logging::init();
     let options = options()?;
     let no_tray = options.no_tray;
     let runtime = tokio::runtime::Runtime::new()?;

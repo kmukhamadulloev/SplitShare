@@ -605,3 +605,34 @@ tests. Runtime WARN-only smoke exposed missing INFO-span context; failure entrie
 now carry critical fields directly, and both filters pass. No failing checks remain.
 Storage Io and HTTP UnexpectedEof remain safe categories, not proof of a specific
 OS/network root cause. Existing physical-device release checks remain pending.
+
+## Host logging settings and live viewer — 2026-10-03
+
+- PASS: Settings → Logging changes runtime verbosity without modifying sharing
+  settings or revoking remote sessions.
+- PASS: Open logs shows the newest 500 in-memory diagnostic entries with live SSE
+  updates, search, severity filtering, refresh, clear and recoverable errors.
+- PASS: Snapshot/configuration/clear/SSE routes enforce host-local access, mutation
+  guards, no-store responses and the shared stream limit.
+- PASS: Capture excludes paths, credentials, raw errors and unapproved messages;
+  real upload lifecycle fields remain visible and correlated by transfer ID.
+- PASS: Modal keyboard navigation, focus restoration and automated accessibility
+  checks; desktop/mobile layouts visually inspected.
+
+Validation:
+
+- `bash scripts/check.sh`: PASS — 66 Rust unit/integration/security tests, both
+  frontend unit files, typecheck/build, formatting and Clippy.
+- `npm run build --prefix web`: PASS for the final frontend.
+- `cargo build --locked -p splitshare`: PASS with final embedded frontend assets.
+- `bash scripts/build-release.sh`: PASS with final embedded frontend assets.
+- `python3 scripts/test-upload-logging.py`: PASS — release HTTP success,
+  interrupted bodies, conflicts, cleanup and privacy under WARN and DEBUG filters.
+
+History and selected verbosity last only for the current process. Restart restores
+startup configuration and clears history. Persistent archives are outside this
+implementation. Existing physical-device and native-platform checks remain manual.
+
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- logs.spec.ts sharing.spec.ts host-setup.spec.ts production-ui.spec.ts`:
+  PASS — 40 tests across desktop/mobile Chromium, Firefox and WebKit.
+- `git diff --check`: PASS.

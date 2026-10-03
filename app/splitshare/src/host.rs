@@ -131,6 +131,7 @@ impl Host {
             authorities,
             CancellationToken::new(),
         );
+        state.diagnostics = crate::logging::diagnostics();
         state.candidates = addresses.candidates(self.address);
         state.host_control = Some(self.control.clone());
         state.settings_store = Some(Arc::new(ConfigStore(self.config_path.clone())));

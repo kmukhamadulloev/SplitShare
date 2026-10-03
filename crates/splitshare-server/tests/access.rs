@@ -529,3 +529,97 @@ async fn native_setup_is_host_only_and_never_accepts_browser_paths() {
         409
     );
 }
+
+#[tokio::test]
+async fn diagnostics_are_host_only_bounded_and_do_not_revoke_sessions() {
+    use std::{collections::BTreeMap, sync::Arc};
+    let (_root, state) = state();
+    let cookie = join(&state).await;
+    for (method, path, body) in [
+        ("GET", "/api/v1/host/logs", ""),
+        ("HEAD", "/api/v1/host/logs", ""),
+        ("DELETE", "/api/v1/host/logs", ""),
+        ("GET", "/api/v1/host/logs/config", ""),
+        ("PUT", "/api/v1/host/logs/config", r#"{"level":"debug"}"#),
+        ("GET", "/api/v1/host/logs/events", ""),
+    ] {
+        assert_eq!(
+            send(&state, false, method, path, &cookie, body)
+                .await
+                .status(),
+            403
+        );
+    }
+    state.diagnostics.install_control(Arc::new(|_| Ok(())));
+    for _ in 0..510 {
+        state
+            .diagnostics
+            .record("INFO", "test", "safe test entry", BTreeMap::new());
+    }
+    let response = send(&state, true, "GET", "/api/v1/host/logs", "", "").await;
+    assert_eq!(response.headers()["cache-control"], "no-store");
+    assert_eq!(json(response).await.as_array().unwrap().len(), 500);
+    let configured = json(
+        send(
+            &state,
+            true,
+            "PUT",
+            "/api/v1/host/logs/config",
+            "",
+            r#"{"level":"debug"}"#,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(configured["level"], "debug");
+    assert_eq!(
+        send(&state, false, "GET", "/api/v1/files", &cookie, "")
+            .await
+            .status(),
+        200
+    );
+    let invalid = send(
+        &state,
+        true,
+        "PUT",
+        "/api/v1/host/logs/config",
+        "",
+        r#"{"level":"trace"}"#,
+    )
+    .await;
+    assert_eq!(invalid.status(), 400);
+    assert_eq!(json(invalid).await["error"]["code"], "INVALID_REQUEST");
+    let mut streams = vec![];
+    for _ in 0..32 {
+        let response = send(&state, true, "GET", "/api/v1/host/logs/events", "", "").await;
+        assert_eq!(response.status(), 200);
+        streams.push(response);
+    }
+    assert_eq!(
+        send(&state, true, "GET", "/api/v1/host/logs/events", "", "")
+            .await
+            .status(),
+        429
+    );
+    drop(streams);
+    assert_eq!(
+        send(&state, true, "DELETE", "/api/v1/host/logs", "", "")
+            .await
+            .status(),
+        204
+    );
+    assert!(state.diagnostics.snapshot().is_empty());
+    let response = api_router(state.clone())
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri("/api/v1/host/logs")
+                .header("host", "127.0.0.1:8080")
+                .extension(ConnectInfo("127.0.0.1:2000".parse::<SocketAddr>().unwrap()))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 403);
+}

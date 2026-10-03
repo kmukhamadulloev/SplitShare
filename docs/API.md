@@ -205,3 +205,27 @@ Binding/selection failures appear as a safe `failed` snapshot, not a false succe
 Cancel/unavailable picker produces `cancelled` with explanatory text. Applying a
 change cancels active transfers, revokes sessions and persists native startup
 configuration. See [HOST_SETUP.md](HOST_SETUP.md) for lifecycle and recovery details.
+
+## Host logging
+
+All `/api/v1/host/logs` routes require actual host-local socket classification,
+including GET/HEAD and SSE. Remote clients receive 403 even with a valid session
+or spoofed forwarding headers. Responses are no-store. Mutations require the
+existing same-origin checks and `X-SplitShare-Request: 1`.
+
+- `GET /api/v1/host/logs`: oldest-first array of at most 500 entries. Each entry is
+  `{id,timestamp_ms,level,target,message,fields}`. IDs are monotonic within a run;
+  `fields` is a bounded map of approved diagnostic strings. No paths/keys/cookies.
+- `DELETE /api/v1/host/logs`: clears in-memory history; 204. IDs are not reset.
+- `GET /api/v1/host/logs/config`: `{level,available,capacity:500}`. `level:null`
+  means the startup environment/default filter remains active.
+- `PUT /api/v1/host/logs/config`: `{ "level":"warn"|"info"|"debug" }`. Reloads the
+  running console/history filter and returns config. Changes are process-local,
+  survive listener restart, and reset on process restart. No session revocation.
+  Invalid JSON/levels/unknown fields return 400 INVALID_REQUEST; unavailable runtime
+  control returns 503 LOGGING_UNAVAILABLE. The existing control-body limits apply.
+- `GET /api/v1/host/logs/events`: SSE `logs.changed` notifications with `{}` data.
+  Sent immediately on subscribe, history/config changes and receiver lag. Clients
+  refetch the bounded snapshot, also after reconnect. Shares the existing 32-stream
+  limit (429 EVENT_LIMIT) and exits on listener shutdown. It works before a folder
+  is selected and never publishes logs through remote filesystem SSE.

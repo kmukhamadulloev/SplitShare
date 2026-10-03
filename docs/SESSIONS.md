@@ -131,3 +131,8 @@ redirect/HttpOnly behavior, token rotation, and locally decode the rendered QR
 pixels using jsQR. The Linux standalone smoke checks settings across restart,
 restart invalidation and absence of secrets from logs/config. Native Windows/macOS
 runtime, physical-device QR scanning and LAN/VPN reachability still require testing.
+
+Host diagnostic history, configuration, clearing and log SSE use the same socket-
+based host classification and mutation guards. They remain unavailable to remote
+sessions and are separate from remote filesystem/transfer SSE. Changing log level
+or clearing history does not rotate tokens or invalidate upload grants.

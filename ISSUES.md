@@ -86,6 +86,9 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Host setup
 
+- Logging level and live host log viewer are process-local; persistent log archives
+  and persisted verbosity are outside this implementation.
+
 - Duplicate network apply controls and empty QR fields are removed; one Save
   changes action retains network validation and persistence.
 

@@ -8,6 +8,7 @@ use axum::{
 use rust_embed::RustEmbed;
 mod access;
 mod api;
+mod diagnostics;
 mod error;
 mod range;
 mod transport;
@@ -96,6 +97,15 @@ pub fn api_router(state: ServerState) -> Router {
             "/api/v1/host/settings",
             get(access::settings).put(access::update),
         )
+        .route(
+            "/api/v1/host/logs",
+            get(diagnostics::list).delete(diagnostics::clear),
+        )
+        .route(
+            "/api/v1/host/logs/config",
+            get(diagnostics::config).put(diagnostics::configure),
+        )
+        .route("/api/v1/host/logs/events", get(diagnostics::events))
         .route("/api/v1/host/network", get(access::network))
         .route(
             "/api/v1/host/setup",

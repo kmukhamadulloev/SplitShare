@@ -239,3 +239,14 @@ discovery loads or fails; recovery controls remain available.
 The transfer bar offers an optional Keep screen awake control while uploads are
 pending. Its status distinguishes a native wake lock from best-effort video
 playback and exposes failure/interruption inline, without another dialog.
+
+## Host log viewer
+
+Settings → Logging offers Warnings and errors, Standard and Detailed levels.
+Save changes reloads the filter for the current run; Startup configuration denotes
+RUST_LOG/default selection. Logging-only saves do not modify sharing settings or
+revoke clients. Open logs opens a host-only, focus-trapped modal with timestamps,
+severity, source, message and structured fields. Latest entries appear first;
+search, severity filtering, Refresh and Clear logs operate on the bounded history.
+Live SSE notifications coalesce snapshot refreshes; closing cancels network work
+and restores focus. Errors and disconnected/reconnecting state remain visible.

@@ -418,3 +418,10 @@ real HTTP completion, incomplete bodies and conflicts at WARN and DEBUG verbosit
 It verifies correlation fields even when INFO spans are filtered out, partial-file
 cleanup and absence of private paths/keys. Requires a built release executable
 and free loopback port 43129.
+
+Host diagnostics tests cover bounded history, safe tracing capture, local-only
+GET/HEAD/mutations/SSE, invalid levels, mutation markers, stream limits, clearing,
+and preservation of remote sessions. `web/tests/logs.spec.ts` changes the runtime
+filter through settings, generates real upload logs, observes SSE updates, searches
+and filters, clears history, exercises failed loads and validates modal accessibility
+and focus restoration. Browser fixtures do not substitute for native OS validation.
