@@ -18,7 +18,7 @@ The project intentionally follows a release-quality path instead of an MVP path.
 | 06 | Production WebUI | Implemented; Linux/browser acceptance PASS, native/device validation pending |
 | 07 | Desktop tray + lifecycle | Implemented; Linux PASS; Windows/macOS manual validation owned by user |
 | 08 | Reliability + security + performance | Implemented; local acceptance PASS; host setup correction verified; native/device follow-ups recorded |
-| 09 | Packaging + v1.0 acceptance | Planned |
+| 09 | Packaging + v1.0 acceptance | In progress: Linux archive candidate; final platform/device and license gates pending |
 
 ## v1.0 definition
 

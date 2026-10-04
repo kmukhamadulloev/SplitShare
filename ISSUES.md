@@ -55,6 +55,11 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 ## Packaging
 
+- Linux archive generation and isolated extracted-archive smoke are implemented.
+- [ ] Audit and bundle required third-party notices before public distribution.
+- [ ] Verify the Linux archive on clean supported distributions; local smoke uses
+  installed GTK/AppIndicator libraries and does not prove portable ABI support.
+
 - [ ] Windows signing strategy is not defined.
 - [ ] macOS signing/notarization strategy is not defined.
 - [ ] Linux packaging formats beyond release archive are not defined.

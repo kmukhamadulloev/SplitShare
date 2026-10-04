@@ -1,8 +1,8 @@
-# Current Goal — Host setup correction
+# Current Goal — Linux packaging checkpoint
 
 The active implementation goal is:
 
-`goals/HOST_SETUP_CORRECTION.md`
+`goals/PHASE_09_PACKAGING_V1.md`
 
 ## Product release program
 
@@ -83,3 +83,7 @@ See docs/PREVIEWS.md and acceptance evidence.
 Mandatory onboarding: unconfigured hosts use a non-dismissible folder/connection/
 access wizard. Selection stays private until listener startup and persistence succeed;
 port changes reuse the native process and move the host browser. See docs/HOST_SETUP.md.
+
+Phase 09 starts with a native Linux archive candidate and extracted-archive smoke
+validation. Windows/macOS checks remain user-owned. Publishing, tagging and a
+v1.0 completion claim are outside this checkpoint.

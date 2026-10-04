@@ -69,3 +69,23 @@ still links GTK libraries. No Node or webview runtime is added.
 
 The native menu embeds the branding PNG. Windows executable resources and macOS
 bundle icons/identity remain packaging work for the release artifact phase.
+
+## Linux archive checkpoint
+
+Run `python3 scripts/package-linux.py` from a checkout with frontend build tools,
+Rust and the native development libraries installed. It rebuilds the production
+frontend and release executable, takes the development version from Cargo metadata,
+and stages the executable, branding PNG, project license and startup instructions.
+It verifies the staged archive before replacing the candidate under `release/`:
+`splitshare-<version>-linux-x86_64.tar.gz` plus a SHA-256 sidecar.
+
+The smoke test extracts into a temporary directory, launches with an empty PATH
+and isolated configuration, retrieves embedded assets, uploads/downloads real bytes,
+checks Range responses and exits via SIGTERM. Run it independently with
+`python3 scripts/smoke-linux-archive.py release/<archive>.tar.gz`.
+This uses the current machine's native libraries; it is not a clean-distribution,
+tray, second-device LAN or QR-scanning acceptance claim.
+
+The current Cargo development version is retained rather than relabeling this
+candidate as v1.0. No tagging or publishing occurs. Third-party license/notice
+collection and distribution compatibility must be completed before public release.

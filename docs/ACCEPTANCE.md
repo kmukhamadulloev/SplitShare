@@ -757,3 +757,24 @@ Native picker/opener checks on Windows/macOS/Wayland remain manual. No automated
 mandatory checks are failing; browser navigation after a moved connection is not
 itself a success assertion, and tray Open remains the recovery path.
 - `bash scripts/build-release.sh`: PASS with final embedded wizard and startup fallback.
+
+## Linux archive candidate — 2026-10-05
+
+- PASS — `python3 scripts/package-linux.py`: fresh frontend production build and
+  locked native release build; development version read from Cargo metadata;
+  archive includes executable, branding, startup instructions and project license.
+- PASS — the packaging command invokes `scripts/smoke-linux-archive.py` against
+  the staged tarball: isolated extraction/configuration, empty runtime PATH,
+  embedded HTML/assets, real upload/download byte equality, HTTP 206 Range and
+  successful SIGTERM exit. No repository working directory or Node process is used.
+- PASS — `sha256sum --check splitshare-0.1.0-linux-x86_64.tar.gz.sha256`
+  in `release/` verifies the candidate digest.
+- PASS — `bash scripts/check.sh`: frontend typecheck/unit/build, Rust format,
+  workspace/all-target Clippy and workspace unit/integration/doc tests.
+- PASS — Python AST parsing for both added scripts; `git diff --check`.
+- NOT APPLICABLE — new browser interaction/security API tests: this checkpoint
+  changes packaging tooling and documentation only; existing Rust regressions run.
+- NOT COMPLETE — full Phase 09 release acceptance: clean-distribution ABI/runtime
+  verification, third-party notices, separate-device LAN/QR and remaining native
+  platform/device checks still apply. Empty PATH smoke does not exercise tray or
+  native folder dialogs. No v1.0 tag or public release is produced.

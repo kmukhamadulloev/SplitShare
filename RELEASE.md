@@ -4,6 +4,10 @@ No public release has been produced from this scaffold.
 
 ## Unreleased development
 
+- Linux archive candidate tooling rebuilds embedded assets, verifies extracted
+  startup and transfer/Range behavior, and emits a SHA-256 checksum. This is not
+  a published v1.0 artifact; platform/device and license acceptance remain open.
+
 - Phase 01: runnable native foundation, versioned configuration and embedded frontend.
 - Phase 02: validated virtual paths, capability-based storage operations, seekable
   file reads, bounded upload writers, atomic conflict policies and cleanup.
