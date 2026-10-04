@@ -242,3 +242,31 @@ no-store, nosniff and `Content-Security-Policy: sandbox; default-src 'none'`.
 Unsupported extensions return 415 PREVIEW_UNAVAILABLE. Text/source/HTML/XML are
 served only as plain UTF-8 text. The browser reads at most 256 KiB for its text view;
 the endpoint itself remains a normal bounded stream. See [PREVIEWS.md](PREVIEWS.md).
+
+
+## Mandatory initial setup
+
+Host setup snapshots include `setup_required`. `folder_selected` may describe a
+staged native sandbox while `setup_required:true`; it does not mean files are shared.
+`POST /api/v1/host/folder` stages selection in memory during initial setup and
+continues to apply immediately for an already configured host.
+
+`POST /api/v1/host/setup/complete` accepts
+`{network:{bind_ip,port},settings:HostSettings}` with the existing strict settings
+schema. It is host-only, same-origin and mutation-marker protected. A native folder
+must already be staged; interface/port and settings must validate. Returns 202 plus
+a setup snapshot, never an immediate success claim. Poll `/host/setup` until ready
+with `setup_required:false`, or a failed/cancelled state. Invalid JSON returns 400;
+invalid state/network or a pending operation returns 409 HOST_SETUP_REJECTED.
+`PUT /host/setup` cannot bypass initial setup and returns 409 until completion.
+
+While setup is required, GET/HEAD `/status` may be read without a join session and
+reports `sharing:false`, generic root label and no file permissions. Host-only
+routes retain socket authorization. File/transfer/filesystem-SSE APIs return 503
+SETUP_REQUIRED for both local and remote clients, including the short interval
+between listener startup and final persistence. Normal session rules resume after
+completion. No browser paths, native root values or persistent configuration paths
+are exposed. See [HOST_SETUP.md](HOST_SETUP.md) for restart and rollback behavior.
+
+Normal `PUT /host/settings` returns 409 HOST_SETUP_REQUIRED during initial setup
+or an applying lifecycle change, preventing conflicting policy writes.

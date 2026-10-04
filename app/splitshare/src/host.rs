@@ -23,6 +23,7 @@ pub struct Host {
     settings: HostSettings,
     files: Option<splitshare_application::FileService>,
     address: SocketAddr,
+    pending_folder: Option<(PathBuf, splitshare_application::FileService)>,
     running: Option<Running>,
     actions: DesktopActions,
     control: HostControl,
@@ -79,6 +80,7 @@ impl Host {
             bind_ip: options.bind.ip().to_string(),
             port: options.bind.port(),
             folder_selected: files.is_some(),
+            setup_required: files.is_none(),
             interfaces: vec![],
             state: "ready",
             message: None,
@@ -91,14 +93,31 @@ impl Host {
             settings,
             files,
             running: None,
+            pending_folder: None,
             actions: DesktopActions::default(),
             control,
             setup_commands: Some(setup_commands),
         };
-        host.start().await?;
+        let temporary_port = match host.start().await {
+            Ok(()) => false,
+            Err(error)
+                if host.files.is_none()
+                    && !host.options.bind_explicit
+                    && error
+                        .downcast_ref::<std::io::Error>()
+                        .is_some_and(|error| error.kind() == std::io::ErrorKind::AddrInUse) =>
+            {
+                host.address = "127.0.0.1:0".parse().unwrap();
+                host.start().await?;
+                true
+            }
+            Err(error) => return Err(error),
+        };
         host.setup_status(
             "ready",
-            if unavailable_root {
+            if temporary_port {
+                Some("The requested port is in use. Setup opened on a temporary local port; choose your connection settings.")
+            } else if unavailable_root {
                 Some("The saved folder is unavailable. Choose a shared folder again.")
             } else {
                 None
@@ -189,7 +208,8 @@ impl Host {
         self.control.publish(Snapshot {
             bind_ip: self.address.ip().to_string(),
             port: self.address.port(),
-            folder_selected: self.files.is_some(),
+            folder_selected: self.files.is_some() || self.pending_folder.is_some(),
+            setup_required: self.files.is_none(),
             interfaces,
             state,
             message: message.map(str::to_owned),
@@ -201,6 +221,15 @@ impl Host {
         root: Option<PathBuf>,
         files: Option<splitshare_application::FileService>,
         address: SocketAddr,
+    ) -> Result<(), Error> {
+        self.apply_configuration(root, files, address, None).await
+    }
+    async fn apply_configuration(
+        &mut self,
+        root: Option<PathBuf>,
+        files: Option<splitshare_application::FileService>,
+        address: SocketAddr,
+        settings: Option<HostSettings>,
     ) -> Result<(), Error> {
         if self.options.dev && !address.ip().is_loopback() {
             self.setup_status(
@@ -231,55 +260,54 @@ impl Host {
             None
         };
         let path = self.config_path.with_file_name("host.json");
-        let previous = match startup::load(&path) {
-            Ok(previous) => previous,
-            Err(_) => {
-                self.setup_status(
-                    "failed",
-                    Some("Saved host setup cannot be read. The current share is unchanged."),
-                );
-                tracing::warn!(
-                    "Host setup file is invalid or unavailable; refusing to overwrite it"
-                );
-                return Ok(());
-            }
-        };
+        if startup::load(&path).is_err() {
+            self.setup_status(
+                "failed",
+                Some("Saved host setup cannot be read. The current share is unchanged."),
+            );
+            tracing::warn!("Host setup file is invalid or unavailable; refusing to overwrite it");
+            return Ok(());
+        }
         let SocketAddr::V4(bind) = address else {
             return Err("IPv4 required".into());
         };
-        if startup::save(
-            &path,
-            &Startup {
-                root: root.clone(),
-                bind: Some(bind),
-            },
-        )
-        .is_err()
-        {
-            self.setup_status(
-                "failed",
-                Some("Could not save host setup. The current share is unchanged."),
-            );
-            return Ok(());
-        }
         self.setup_status("applying", None);
-        if let Err(error) = self.stop().await {
-            if startup::save(&path, &previous).is_err() {
-                tracing::error!("Could not restore host setup after shutdown failure");
-            }
-            return Err(error);
-        }
+        self.stop().await?;
+        let old_settings = self.settings.clone();
         let old_address = self.address;
         let old_root = self.options.root.clone();
         let old_files = self.files.clone();
         self.address = address;
         self.options.root = root;
         self.files = files;
-        if self.start_with(listener).await.is_err() {
+        let changed_settings = settings.is_some();
+        if let Some(settings) = settings {
+            self.settings = settings;
+        }
+        let applied = self.start_with(listener).await.is_ok();
+        let settings_saved = applied
+            && changed_settings
+            && splitshare_platform::save(&self.config_path, &self.settings).is_ok();
+        let saved = applied
+            && (!changed_settings || settings_saved)
+            && startup::save(
+                &path,
+                &Startup {
+                    root: self.options.root.clone(),
+                    bind: Some(bind),
+                },
+            )
+            .is_ok();
+        if !saved {
+            self.stop().await?;
             self.address = old_address;
             self.options.root = old_root;
             self.files = old_files;
-            startup::save(&path, &previous)?;
+            self.settings = old_settings;
+            if settings_saved {
+                splitshare_platform::save(&self.config_path, &self.settings)?;
+            }
+            // Startup save is atomic and failed, so its previous contents remain intact.
             self.start().await?;
             self.setup_status(
                 "failed",
@@ -287,6 +315,7 @@ impl Host {
             );
             tracing::warn!("Host setup failed; previous listener and sandbox restored");
         } else {
+            self.pending_folder = None;
             self.setup_status(
                 "ready",
                 Some("Host setup saved. Sharing is ready; use a new QR code or link."),
@@ -301,6 +330,15 @@ impl Host {
             tokio::task::spawn_blocking(move || splitshare_storage::Storage::open(&selected)).await;
         match files {
             Ok(Ok(storage)) => {
+                if self.files.is_none() {
+                    self.pending_folder =
+                        Some((root, splitshare_application::FileService::new(storage)));
+                    self.setup_status(
+                        "ready",
+                        Some("Folder selected. Complete setup to start sharing."),
+                    );
+                    return Ok(());
+                }
                 self.reconfigure(
                     Some(root),
                     Some(splitshare_application::FileService::new(storage)),
@@ -313,6 +351,22 @@ impl Host {
                 Ok(())
             }
         }
+    }
+    async fn complete_setup(
+        &mut self,
+        setup: splitshare_application::host_control::InitialSetup,
+    ) -> Result<(), Error> {
+        let Some((root, files)) = self.pending_folder.clone() else {
+            self.setup_status("failed", Some("Choose a shared folder first."));
+            return Ok(());
+        };
+        self.apply_configuration(
+            Some(root),
+            Some(files),
+            std::net::SocketAddrV4::new(setup.network.bind_ip, setup.network.port).into(),
+            Some(setup.settings),
+        )
+        .await
     }
     fn local_url(&self) -> String {
         let ip = if self.address.ip().is_unspecified() {
@@ -355,7 +409,7 @@ impl Host {
         self.publish(status, false, None);
         let signal = shutdown_signal();
         tokio::pin!(signal);
-        if self.options.open_browser {
+        if self.options.open_browser || (!self.options.no_tray && self.files.is_none()) {
             tokio::select! {
                 result = &mut signal => { result?; return self.stop().await; },
                 result = DesktopActions::open(self.local_url()) => {
@@ -388,6 +442,10 @@ impl Host {
                         Action::ChooseFolder => {
                             self.publish(status, true, None);
                             picker = Some(tokio::spawn(async { tokio::time::timeout(Duration::from_secs(300), DesktopActions::choose_folder()).await.ok().flatten() }));
+                        },
+                        Action::Complete(setup) => {
+                            self.complete_setup(setup).await?;
+                            self.publish(status, false, None);
                         },
                         Action::Network(settings) => {
                             self.reconfigure(self.options.root.clone(), self.files.clone(), std::net::SocketAddrV4::new(settings.bind_ip, settings.port).into()).await?;
@@ -674,6 +732,130 @@ mod tests {
                 .unwrap()
                 .contains("unavailable")
         );
+        host.stop().await.unwrap();
+    }
+    #[tokio::test]
+    async fn initial_setup_stages_folder_rejects_busy_port_and_persists_only_on_success() {
+        use splitshare_application::host_control::{InitialSetup, NetworkSettings};
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("share");
+        std::fs::create_dir(&root).unwrap();
+        std::fs::write(root.join("hello.txt"), "private until ready").unwrap();
+        let mut opts = options(root.clone());
+        opts.root = None;
+        let mut host = Host::configured(opts, temp.path().join("config.json"))
+            .await
+            .unwrap();
+        let old_address = host.address;
+        let client = reqwest::Client::builder().no_proxy().build().unwrap();
+        host.selected_folder(root.clone()).await.unwrap();
+        assert!(host.files.is_none());
+        assert!(host.control.snapshot().folder_selected);
+        assert!(host.control.snapshot().setup_required);
+        assert!(!temp.path().join("host.json").exists());
+        assert_eq!(
+            client
+                .get(format!(
+                    "{}api/v1/files/download?path=/hello.txt",
+                    host.local_url()
+                ))
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            503
+        );
+        let occupied = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut settings = HostSettings::default();
+        settings.permissions.upload = false;
+        let setup = InitialSetup {
+            network: NetworkSettings {
+                bind_ip: std::net::Ipv4Addr::LOCALHOST,
+                port: occupied.local_addr().unwrap().port(),
+            },
+            settings,
+        };
+        host.complete_setup(setup.clone()).await.unwrap();
+        assert_eq!(host.address, old_address);
+        assert_eq!(host.control.snapshot().state, "failed");
+        assert!(host.control.snapshot().setup_required);
+        assert!(host.pending_folder.is_some());
+        assert!(!temp.path().join("host.json").exists());
+        drop(occupied);
+        let config_path = temp.path().join("config.json");
+        let backup = temp.path().join("saved-config.json");
+        std::fs::rename(&config_path, &backup).unwrap();
+        std::fs::create_dir(&config_path).unwrap();
+        host.complete_setup(setup.clone()).await.unwrap();
+        assert_eq!(host.address, old_address);
+        assert!(host.control.snapshot().setup_required);
+        assert_eq!(host.control.snapshot().state, "failed");
+        assert!(!temp.path().join("host.json").exists());
+        std::fs::remove_dir(&config_path).unwrap();
+        std::fs::rename(&backup, &config_path).unwrap();
+        host.complete_setup(setup.clone()).await.unwrap();
+        assert!(!host.control.snapshot().setup_required);
+        assert_eq!(host.address.port(), setup.network.port);
+        assert_eq!(
+            client
+                .get(format!(
+                    "{}api/v1/files/download?path=/hello.txt",
+                    host.local_url()
+                ))
+                .send()
+                .await
+                .unwrap()
+                .text()
+                .await
+                .unwrap(),
+            "private until ready"
+        );
+        assert_eq!(
+            startup::load(&temp.path().join("host.json")).unwrap().root,
+            Some(root.clone())
+        );
+        assert!(
+            !splitshare_platform::load_or_create(&temp.path().join("config.json"))
+                .unwrap()
+                .permissions
+                .upload
+        );
+        host.stop().await.unwrap();
+        let mut opts = options(root);
+        opts.root = None;
+        opts.bind_explicit = false;
+        let mut host = Host::configured(opts, temp.path().join("config.json"))
+            .await
+            .unwrap();
+        assert!(!host.control.snapshot().setup_required);
+        assert_eq!(host.address.port(), setup.network.port);
+        host.stop().await.unwrap();
+    }
+    #[tokio::test]
+    async fn unconfigured_default_port_conflict_uses_temporary_loopback_listener() {
+        let temp = tempfile::tempdir().unwrap();
+        let occupied = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let mut opts = options(temp.path().to_owned());
+        opts.root = None;
+        opts.bind = match occupied.local_addr().unwrap() {
+            SocketAddr::V4(value) => value,
+            _ => unreachable!(),
+        };
+        opts.bind_explicit = false;
+        let mut host = Host::configured(opts, temp.path().join("config.json"))
+            .await
+            .unwrap();
+        assert!(host.control.snapshot().setup_required);
+        assert!(host.address.ip().is_loopback());
+        assert_ne!(host.address, occupied.local_addr().unwrap());
+        assert!(
+            host.control
+                .snapshot()
+                .message
+                .unwrap()
+                .contains("temporary local port")
+        );
+        assert!(!temp.path().join("host.json").exists());
         host.stop().await.unwrap();
     }
 }

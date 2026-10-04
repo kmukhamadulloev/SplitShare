@@ -4,44 +4,55 @@ import {mkdtemp,rm,readFile} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join,resolve} from 'node:path'
 
-test('first launch offers folder setup and applies persistent LAN settings', async ({page,request}) => {
+test('first launch requires setup and cannot expose a folder or change network early', async ({page,request}) => {
   const config = await mkdtemp(join(tmpdir(),'splitshare-setup-'))
   const base = 'http://127.0.0.1:43130'
-  let child = spawn(resolve('../target/debug/splitshare'),['--no-tray','--bind','127.0.0.1:43130'],{env:{...process.env,XDG_DATA_HOME:config,LOCALAPPDATA:config},stdio:'ignore'})
+  const child = spawn(resolve('../target/debug/splitshare'),['--no-tray','--bind','127.0.0.1:43130'],{env:{...process.env,XDG_DATA_HOME:config,LOCALAPPDATA:config},stdio:'ignore'})
   const stop = async () => { if (child.exitCode !== null) return; const exited = new Promise(resolve => child.once('exit',resolve)); child.kill('SIGTERM'); await exited }
   try {
     await expect.poll(async () => { try {return (await request.get(`${base}/api/v1/status`)).status()} catch {return 0} }).toBe(200)
     await page.goto(base)
-    await expect(page.getByRole('heading',{name:'No folder is being shared'})).toBeVisible()
-    await page.getByRole('link',{name:'Set up sharing'}).click()
+    const wizard = page.getByRole('dialog',{name:'Set up SplitShare',exact:true})
+    await expect(wizard).toBeVisible()
+    await expect(wizard.getByRole('button',{name:'Choose shared folder',exact:true})).toBeEnabled()
+    await expect(wizard.getByRole('button',{name:'Next',exact:true})).toBeDisabled()
+    await page.keyboard.press('Escape'); await expect(wizard).toBeVisible()
+    await expect(wizard.getByRole('button',{name:/Skip|Cancel|Close/})).toHaveCount(0)
+    await page.reload(); await expect(wizard).toBeVisible()
+    expect((await request.get(`${base}/api/v1/files?path=/`)).status()).toBe(503)
+    expect((await request.put(`${base}/api/v1/host/setup`,{headers:{'X-SplitShare-Request':'1'},data:{bind_ip:'0.0.0.0',port:43130}})).status()).toBe(409)
+  } finally {await stop();await rm(config,{recursive:true,force:true})}
+})
+
+test('network changes move the browser automatically and survive restart', async ({page,request}) => {
+  const config = await mkdtemp(join(tmpdir(),'splitshare-rebind-'))
+  let child = spawn(resolve('../target/debug/splitshare'),['--no-tray','--root',config,'--bind','127.0.0.1:43130'],{env:{...process.env,XDG_DATA_HOME:config,LOCALAPPDATA:config},stdio:'ignore'})
+  const stop = async () => { if (child.exitCode !== null) return; const exited = new Promise(resolve => child.once('exit',resolve)); child.kill('SIGTERM'); await exited }
+  try {
+    await expect.poll(async () => {try{return (await request.get('http://127.0.0.1:43130/api/v1/status')).status()}catch{return 0}}).toBe(200)
+    await page.goto('http://127.0.0.1:43130')
+    await expect(page.getByRole('dialog',{name:'Set up SplitShare',exact:true})).not.toBeVisible()
+    await page.getByRole('button',{name:'Host settings',exact:true}).click()
     const settings = page.getByRole('dialog',{name:'Host settings',exact:true})
-    await expect(settings.getByRole('button',{name:'Choose shared folder',exact:true})).toBeEnabled()
-    await expect(settings.getByText('No folder selected.',{exact:false})).toBeVisible()
-    await settings.getByRole('button',{name:'Cancel',exact:true}).click()
-    await page.getByRole('button',{name:'Share with QR',exact:true}).click()
-    await expect(settings.getByLabel('Host setup status')).toContainText('Choose a folder before generating')
     await settings.getByRole('button',{name:'network',exact:true}).click()
-    await expect(settings.getByRole('button',{name:'Apply network settings'})).toHaveCount(0)
     await settings.getByLabel('Port',{exact:true}).fill('0')
     await expect(settings.getByRole('button',{name:'Save changes',exact:true})).toBeDisabled()
-    await settings.getByLabel('Port',{exact:true}).fill('43130')
+    // The main E2E server occupies 43123: failure keeps the old address and entered value.
+    await settings.getByLabel('Port',{exact:true}).fill('43123')
+    await settings.getByRole('button',{name:'Save changes',exact:true}).click()
+    await expect(settings.getByLabel('Host setup status')).toContainText('unavailable')
+    await expect(settings.getByLabel('Port',{exact:true})).toHaveValue('43123')
+    await settings.getByLabel('Port',{exact:true}).fill('43131')
     await settings.getByLabel('Interface',{exact:true}).selectOption('0.0.0.0')
     await settings.getByRole('button',{name:'Save changes',exact:true}).click()
-    await expect(settings.getByLabel('Host setup status')).toContainText('Host setup saved',{timeout:15000})
-    expect((await (await request.get(`${base}/api/v1/host/setup`)).json()).bind_ip).toBe('0.0.0.0')
-    await settings.getByLabel('Interface',{exact:true}).selectOption('127.0.0.1')
-    await settings.getByRole('button',{name:'Save changes',exact:true}).click()
-    await expect.poll(async () => {try {return (await (await request.get(`${base}/api/v1/host/setup`)).json()).bind_ip} catch {return ''}}).toBe('127.0.0.1')
-    await expect(settings.getByRole('button',{name:'Save changes',exact:true})).toBeEnabled()
-    await settings.getByLabel('Interface',{exact:true}).selectOption('0.0.0.0')
-    await settings.getByRole('button',{name:'Save changes',exact:true}).click()
-    await expect.poll(async () => {try {return (await (await request.get(`${base}/api/v1/host/setup`)).json()).bind_ip} catch {return ''}}).toBe('0.0.0.0')
-    expect(JSON.parse(await readFile(join(config,'SplitShare','host.json'),'utf8')).bind).toBe('0.0.0.0:43130')
+    await expect(page).toHaveURL(/http:\/\/127\.0\.0\.1:43131\//,{timeout:20000})
+    await expect(settings).toBeVisible()
+    expect(JSON.parse(await readFile(join(config,'SplitShare','host.json'),'utf8')).bind).toBe('0.0.0.0:43131')
     await stop()
     child = spawn(resolve('../target/debug/splitshare'),['--no-tray'],{env:{...process.env,XDG_DATA_HOME:config,LOCALAPPDATA:config},stdio:'ignore'})
-    await expect.poll(async () => {try {return (await (await request.get(`${base}/api/v1/host/setup`)).json()).bind_ip} catch {return ''}}).toBe('0.0.0.0')
-    await page.goto(base)
-    await expect(page.getByRole('link',{name:'Set up sharing'})).toBeVisible()
+    await expect.poll(async () => {try{return (await request.get('http://127.0.0.1:43131/api/v1/status')).status()}catch{return 0}}).toBe(200)
+    await page.goto('http://127.0.0.1:43131')
+    await expect(page.getByRole('dialog',{name:'Set up SplitShare',exact:true})).not.toBeVisible()
   } finally {await stop();await rm(config,{recursive:true,force:true})}
 })
 

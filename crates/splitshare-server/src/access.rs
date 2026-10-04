@@ -110,6 +110,16 @@ pub async fn update(
     State(state): State<ServerState>,
     body: Result<Json<SettingsRequest>, JsonRejection>,
 ) -> Result<Json<HostSettings>, ApiError> {
+    if state.host_control.as_ref().is_some_and(|control| {
+        let snapshot = control.snapshot();
+        snapshot.setup_required || snapshot.state == "applying"
+    }) {
+        return Err(ApiError::new(
+            StatusCode::CONFLICT,
+            "HOST_SETUP_REQUIRED",
+            "Finish the current host setup before changing sharing settings.",
+        ));
+    }
     let settings: HostSettings = body
         .map_err(|error| {
             ApiError::new(
@@ -213,5 +223,16 @@ pub async fn configure_network(
     submit(
         &state,
         splitshare_application::host_control::Action::Network(settings),
+    )
+}
+
+pub async fn complete_setup(
+    State(state): State<ServerState>,
+    body: Result<Json<splitshare_application::host_control::InitialSetup>, JsonRejection>,
+) -> Result<impl IntoResponse, ApiError> {
+    let setup = body.map_err(|_| ApiError::invalid())?.0;
+    submit(
+        &state,
+        splitshare_application::host_control::Action::Complete(setup),
     )
 }

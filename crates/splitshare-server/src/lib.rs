@@ -112,6 +112,7 @@ pub fn api_router(state: ServerState) -> Router {
             get(access::setup).put(access::configure_network),
         )
         .route("/api/v1/host/folder", post(access::choose_folder))
+        .route("/api/v1/host/setup/complete", post(access::complete_setup))
         .route("/api/v1/host/share-token/rotate", post(access::rotate))
         .route("/api/v1/status", get(api::status))
         .route("/api/v1/files", get(api::list).delete(api::delete))

@@ -267,3 +267,15 @@ Preview refinement: a fixed header groups filename/type/size with Download/Close
 The viewing area takes the remaining space; image navigation/zoom and text controls
 are grouped below it. Audio has a compact dedicated desktop frame. Mobile previews
 fill the viewport with safe-area-aware controls. Error/retry states are centered.
+
+
+## Mandatory first-run wizard
+
+An unconfigured host sees a non-dismissible Folder → Connection → Access wizard.
+Folder selection uses the native picker; connection defaults to loopback/8080 on a
+fresh launch; private QR/link and download-only access are the safe defaults. Back
+allows editing; Start sharing is disabled until folder and valid port exist. Errors
+retain entered values. Only confirmed completion reveals the manager and QR flow.
+Remote visitors see setup-in-progress text, without wizard controls. Existing valid
+configurations bypass the wizard. Normal Network settings automatically navigate
+after a successful port change; the native process remains running.

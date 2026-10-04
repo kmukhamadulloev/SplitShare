@@ -137,6 +137,22 @@ async fn guard_inner(
             )
             .into_response();
         }
+        let setup_required = state
+            .host_control
+            .as_ref()
+            .is_some_and(|control| control.snapshot().setup_required);
+        if setup_required
+            && !path.starts_with("/api/v1/host/")
+            && path != "/api/v1/status"
+            && path != "/api/v1/session/leave"
+        {
+            return ApiError::new(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "SETUP_REQUIRED",
+                "The host is setting up sharing.",
+            )
+            .into_response();
+        }
         let capability = match (request.method(), path) {
             (&Method::GET | &Method::HEAD, "/api/v1/files") => Some(Capability::Browse),
             (&Method::GET | &Method::HEAD, "/api/v1/files/download" | "/api/v1/files/preview") => {
@@ -150,7 +166,11 @@ async fn guard_inner(
             _ => None,
         };
         // Leaving remains possible after expiry or revocation.
-        if path != "/api/v1/session/leave" {
+        if path != "/api/v1/session/leave"
+            && !(setup_required
+                && path == "/api/v1/status"
+                && matches!(*request.method(), Method::GET | Method::HEAD))
+        {
             let access = match state.sessions.authorize(
                 local,
                 crate::access::cookie(request.headers()),
@@ -235,7 +255,11 @@ pub async fn status(
     State(state): State<ServerState>,
     ConnectInfo(peer): ConnectInfo<SocketAddr>,
 ) -> Json<Status> {
-    let sharing = state.files.is_some();
+    let sharing = state.files.is_some()
+        && !state
+            .host_control
+            .as_ref()
+            .is_some_and(|control| control.snapshot().setup_required);
     Json(Status {
         version: env!("CARGO_PKG_VERSION"),
         sharing,

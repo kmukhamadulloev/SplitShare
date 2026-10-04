@@ -79,3 +79,7 @@ and the latest 500 safe diagnostic entries, without disrupting remote sessions.
 File preview follow-up: image, video, audio and bounded plain-text views use an
 allowlisted preview endpoint with existing download authorization and streaming.
 See docs/PREVIEWS.md and acceptance evidence.
+
+Mandatory onboarding: unconfigured hosts use a non-dismissible folder/connection/
+access wizard. Selection stays private until listener startup and persistence succeed;
+port changes reuse the native process and move the host browser. See docs/HOST_SETUP.md.

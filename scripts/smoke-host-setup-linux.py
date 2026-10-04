@@ -21,10 +21,10 @@ def wait(check, seconds=15):
         if result: return result
         time.sleep(.1)
     raise AssertionError('Timed out waiting for host setup')
-def api(path='/host/setup', method='GET'):
+def api(path='/host/setup', method='GET', data=None):
     client = http.client.HTTPConnection('127.0.0.1',43131,timeout=2)
     try:
-        client.request(method, '/api/v1'+path, headers={'X-SplitShare-Request':'1'})
+        client.request(method, '/api/v1'+path, body=None if data is None else json.dumps(data), headers={'X-SplitShare-Request':'1', 'Content-Type':'application/json'})
         response=client.getresponse(); body=response.read()
         assert response.status in (200,202), response.status
         return json.loads(body)
@@ -69,10 +69,20 @@ with tempfile.TemporaryDirectory(prefix='splitshare-picker-') as directory:
                 value=started()
                 return value and value['state']=='ready' and value['folder_selected']
             wait(ready)
+            assert api()['setup_required']
+            assert not api('/status')['sharing']
+            assert not (root/'config/SplitShare/host.json').exists()
+            settings=api('/host/settings')
+            settings['permissions']['upload']=False
+            assert api('/host/setup/complete','POST',{'network':{'bind_ip':'127.0.0.1','port':43131},'settings':settings})['state']=='applying'
+            def completed():
+                value=started()
+                return value and not value['setup_required']
+            wait(completed)
             assert any(entry['name']=='selected.txt' for entry in api('/files?path=/')['entries'])
             saved=json.loads((root/'config/SplitShare/host.json').read_text())
             assert saved['root']==str(share)
-            print('PASS: real native folder dialog, cancellation, selection, live sandbox activation and private persistence')
+            print('PASS: real native folder dialog, cancellation, selection, private staging, mandatory completion and persistence')
         finally:
             host.terminate(); host.wait(timeout=12)
             # The portal owns the native window; close only our known dialog if still present.

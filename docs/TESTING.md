@@ -347,16 +347,15 @@ and Windows/macOS native validation remain separately recorded release follow-up
 
 ## Host setup correction
 
-`bash scripts/check.sh` now includes 62 Rust tests. New coverage verifies native
-setup remote denial (including forged forwarding headers), no browser-selected
-filesystem paths, busy picker limits, real sandbox replacement, listener rebinding,
-occupied-port preservation, startup persistence, missing-folder recovery and private
-versioned configuration. The normal browser matrix has 48 cases: 46 pass and the
-two existing non-Chromium CDP throttling cases are explicitly skipped.
+Host setup coverage verifies native setup remote denial (including forged forwarding
+headers), no browser-selected filesystem paths, busy picker limits, real sandbox
+replacement, listener rebinding, occupied-port preservation, startup persistence,
+missing-folder recovery and private versioned configuration. Current validation
+counts and commands are recorded in docs/ACCEPTANCE.md.
 
-`web/tests/host-setup.spec.ts` starts an additional isolated native process on port
-43130 without a root. It checks the first-run setup action, QR-to-setup flow,
-interface/port form, explicit Apply and Save changes, real LAN rebinding and restart
+`web/tests/host-setup.spec.ts` starts an isolated unconfigured native process on
+port 43130 and verifies mandatory setup/non-dismissal. A configured process checks
+occupied-port recovery, automatic navigation to port 43131, LAN binding and restart
 persistence. Another test injects a discovery failure and verifies QR retry plus
 the loopback Network settings shortcut. Existing QR tests decode actual pixels.
 
@@ -368,8 +367,8 @@ python3 scripts/smoke-host-setup-linux.py
 ```
 
 The smoke starts an isolated host on port 43131, opens its actual portal folder
-dialog, cancels once, then selects a temporary folder and verifies actual listing
-and private persistence. It refuses to run with an existing SplitShare chooser
+dialog, cancels once, then selects a temporary folder and verifies private staging,
+mandatory completion, actual listing and persistence. It refuses to run with an existing SplitShare chooser
 open and checks the target window before keyboard input. It briefly focuses the
 native dialog; run it on a desktop test session. `SPLITSHARE_XDOTOOL` can specify
 an existing test executable. This tool is not a production runtime dependency.
@@ -433,3 +432,14 @@ WAV/MP4 playback, close cleanup, focus restoration and modal accessibility. Serv
 integration tests cover preview authorization, MIME/CSP headers, partial responses,
 traversal and symlink denial. Existing download Range/revocation tests exercise the
 shared stream implementation. Codec/device coverage remains bounded by test engines.
+
+
+Mandatory setup coverage: native Host tests stage a real folder, deny reads, reject
+an occupied port, recover from configuration-save failure, apply policy/listener,
+then restart from persisted configuration. HTTP tests reject bypass attempts and
+remote setup access while allowing only a generic setup status. Browser tests use
+real unconfigured hosts for non-dismissal/reload and real configured hosts for
+occupied-port recovery, automatic origin navigation and persistence. Native picker
+cancellation/selection and final wizard step progression use explicit browser route
+fixtures; these do not claim OS picker coverage. Existing platform picker smoke
+and manual Windows/macOS/Wayland validation remain separate.

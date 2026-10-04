@@ -13,6 +13,7 @@ pub struct Snapshot {
     pub bind_ip: String,
     pub port: u16,
     pub folder_selected: bool,
+    pub setup_required: bool,
     pub interfaces: Vec<Interface>,
     pub state: &'static str,
     pub message: Option<String>,
@@ -24,8 +25,15 @@ pub struct NetworkSettings {
     pub bind_ip: std::net::Ipv4Addr,
     pub port: u16,
 }
+#[derive(Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InitialSetup {
+    pub network: NetworkSettings,
+    pub settings: splitshare_core::HostSettings,
+}
 pub enum Action {
     ChooseFolder,
+    Complete(InitialSetup),
     Network(NetworkSettings),
 }
 #[derive(Clone)]
@@ -55,7 +63,26 @@ impl HostControl {
         if matches!(snapshot.state, "selecting" | "applying") {
             return Err("Another host configuration change is in progress.");
         }
-        if let Action::Network(settings) = &action
+        let network = match &action {
+            Action::Network(settings) => {
+                if snapshot.setup_required {
+                    return Err("Complete initial setup before changing network settings.");
+                }
+                Some(settings)
+            }
+            Action::Complete(setup) => {
+                if !snapshot.setup_required || !snapshot.folder_selected {
+                    return Err("Choose a folder before completing initial setup.");
+                }
+                setup
+                    .settings
+                    .validate()
+                    .map_err(|_| "Invalid sharing settings.")?;
+                Some(&setup.network)
+            }
+            Action::ChooseFolder => None,
+        };
+        if let Some(settings) = network
             && (settings.port == 0
                 || !snapshot
                     .interfaces

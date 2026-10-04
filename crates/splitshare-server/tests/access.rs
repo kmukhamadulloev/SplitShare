@@ -462,6 +462,7 @@ async fn native_setup_is_host_only_and_never_accepts_browser_paths() {
         bind_ip: "127.0.0.1".into(),
         port: 8080,
         folder_selected: false,
+        setup_required: false,
         interfaces: vec![Interface {
             address: "127.0.0.1".into(),
             label: "Local".into(),
@@ -678,4 +679,127 @@ async fn preview_requires_download_permission_and_session() {
             403
         );
     }
+}
+
+#[tokio::test]
+async fn mandatory_setup_cannot_be_skipped_and_remote_sees_only_status() {
+    use splitshare_application::host_control::{Action, HostControl, Interface, Snapshot};
+    let (_root, mut state) = state();
+    let (control, mut commands) = HostControl::new(Snapshot {
+        bind_ip: "127.0.0.1".into(),
+        port: 8080,
+        folder_selected: false,
+        setup_required: true,
+        interfaces: vec![Interface {
+            address: "127.0.0.1".into(),
+            label: "Local".into(),
+        }],
+        state: "ready",
+        message: None,
+        local_url: "http://127.0.0.1:8080/".into(),
+    });
+    state.host_control = Some(control.clone());
+    assert_eq!(
+        send(
+            &state,
+            true,
+            "PUT",
+            "/api/v1/host/settings",
+            "",
+            &serde_json::to_string(&HostSettings::default()).unwrap()
+        )
+        .await
+        .status(),
+        409
+    );
+    // Even if a sandbox has been opened, it is inaccessible before completion.
+    for local in [true, false] {
+        assert_eq!(
+            send(
+                &state,
+                local,
+                "GET",
+                "/api/v1/files/download?path=/hello.txt",
+                "",
+                ""
+            )
+            .await
+            .status(),
+            503
+        );
+        let status = send(&state, local, "GET", "/api/v1/status", "", "").await;
+        assert_eq!(status.status(), 200);
+        assert_eq!(json(status).await["sharing"], false);
+    }
+    assert_eq!(
+        send(
+            &state,
+            false,
+            "POST",
+            "/api/v1/host/setup/complete",
+            "",
+            "{}"
+        )
+        .await
+        .status(),
+        403
+    );
+    assert_eq!(
+        send(
+            &state,
+            true,
+            "PUT",
+            "/api/v1/host/setup",
+            "",
+            r#"{"bind_ip":"127.0.0.1","port":8080}"#
+        )
+        .await
+        .status(),
+        409
+    );
+    let body = serde_json::json!({"network":{"bind_ip":"127.0.0.1","port":8080},"settings":HostSettings::default()}).to_string();
+    assert_eq!(
+        send(
+            &state,
+            true,
+            "POST",
+            "/api/v1/host/setup/complete",
+            "",
+            &body
+        )
+        .await
+        .status(),
+        409
+    );
+    let mut snapshot = control.snapshot();
+    snapshot.folder_selected = true;
+    control.publish(snapshot);
+    assert_eq!(
+        send(
+            &state,
+            true,
+            "POST",
+            "/api/v1/host/setup/complete",
+            "",
+            &body.replace("8080", "0")
+        )
+        .await
+        .status(),
+        409
+    );
+    assert_eq!(
+        send(
+            &state,
+            true,
+            "POST",
+            "/api/v1/host/setup/complete",
+            "",
+            &body
+        )
+        .await
+        .status(),
+        202
+    );
+    assert!(matches!(commands.try_recv().unwrap(), Action::Complete(_)));
+    assert!(control.snapshot().setup_required);
 }

@@ -84,13 +84,15 @@ async function copy() {
   catch { urlInput.value?.focus(); urlInput.value?.select(); notice.value = 'Select and copy the link above.' }
 }
 function settingsRoute() {
+  if (!files.status?.sharing) return
+  if (location.hash === '#share' && files.status?.local_client) { history.replaceState(null,'',location.pathname + location.search); void share(); return }
   if (['#settings','#setup'].includes(location.hash) && files.status?.local_client && !settingsDialog.value?.open) {
     tab.value = location.hash === '#setup' ? 'general' : 'access'
     history.replaceState(null,'',location.pathname + location.search)
     void settings()
   }
 }
-watch(() => files.status?.local_client, settingsRoute)
+watch(() => [files.status?.local_client, files.status?.sharing], settingsRoute)
 onMounted(() => { window.addEventListener('hashchange', settingsRoute); settingsRoute() })
 onUnmounted(() => { window.removeEventListener('hashchange', settingsRoute); polling = false; clearTimeout(poll) })
 async function loadSetup() {
@@ -111,12 +113,14 @@ function startPolling() {
       if (!polling) return
       setup.value = current; failures = 0
       if (!['selecting','applying'].includes(current.state)) {
+        if (current.state === 'ready' && nextAddress.value && new URL(nextAddress.value).origin !== location.origin) { location.assign(nextAddress.value); return }
         polling = false; setupBusy.value = false; nextAddress.value = ''
-        bindIp.value = current.bind_ip; port.value = current.port
+        if (current.state === 'ready') { bindIp.value = current.bind_ip; port.value = current.port }
         setupMessage.value = current.message ?? ''
         await files.refreshStatus(); await files.load('/'); await loadNetwork().catch(cause => { error.value = (cause as Error).message }); return
       }
     } catch { failures++ }
+    if (failures >= 6 && nextAddress.value) { location.assign(nextAddress.value); return }
     if (failures >= 20) {
       polling = false; setupBusy.value = false
       setupMessage.value = nextAddress.value ? 'The connection moved or was interrupted. Open the requested address below to check the change. If it is unavailable, reopen SplitShare from the tray.' : 'Could not confirm the change. Reopen SplitShare from the tray or refresh this page.'
@@ -145,11 +149,12 @@ async function applyNetwork() {
 }
 async function networkSettings() { close(qrDialog.value); await settings(); tab.value = 'network' }
 async function leave() { try { await request('/session/leave','POST'); location.reload() } catch (cause) { files.error = (cause as Error).message } }
+defineExpose({openShare:share})
 </script>
 <template>
   <template v-if="files.status?.local_client">
-    <button class="icon-btn" aria-label="Share with QR" :disabled="setupBusy" @click="share"><QrCode :size="19" /></button>
-    <button class="icon-btn" aria-label="Host settings" @click="settings"><Settings :size="19" /></button>
+    <button class="icon-btn" aria-label="Share with QR" :disabled="setupBusy || !files.status?.sharing" @click="share"><QrCode :size="19" /></button>
+    <button class="icon-btn" aria-label="Host settings" :disabled="!files.status?.sharing" @click="settings"><Settings :size="19" /></button>
   </template>
   <button v-else-if="files.status?.share_mode === 'token_link'" class="icon-btn" aria-label="Leave share" @click="leave"><LogOut :size="19" /></button>
   <dialog ref="qrDialog" class="qr-dialog" aria-label="Share with QR" @cancel.prevent="close(qrDialog)">

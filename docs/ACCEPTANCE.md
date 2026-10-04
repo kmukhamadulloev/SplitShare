@@ -716,3 +716,44 @@ Exact validation:
 - `git diff --check`: PASS.
 
 Physical-device media/codec/accessibility checks remain manual. No new blockers.
+
+## Mandatory first-run setup and live port changes — 2026-10-04
+
+- PASS: Unconfigured hosts automatically open a non-dismissible Folder → Connection
+  → Access wizard. Escape/reload cannot bypass it; no Skip/Close action exists.
+- PASS: Native folder selection stages an opened sandbox without publishing or
+  persisting it. Backend file/transfer access remains gated until setup completes.
+- PASS: Fresh default port is 8080; interface/port edits apply on Start sharing or
+  Save changes. An occupied default port on an unconfigured launch falls back to an
+  unsaved temporary loopback listener; explicit binds are not silently changed.
+- PASS: Private QR/link and download-only defaults; upload/download preset keeps
+  rename/delete disabled. Completion opens the existing QR flow.
+- PASS: Real listener rebinding retains the native process, automatically moves the
+  host browser to the requested origin, and restores saved configuration on restart.
+- PASS: Occupied ports and configuration-save failure retain the old listener and
+  staged folder. Completion is persisted only after listener startup. Valid existing
+  configurations bypass the wizard; missing saved roots require setup again.
+- PASS: Remote clients cannot configure setup; only generic setup status is readable
+  before joining. Host settings writes cannot conflict with applying setup.
+- PASS: Desktop/mobile layout inspection and automated wizard accessibility.
+
+Exact validation:
+- `bash scripts/check.sh`: PASS — 71 Rust unit/integration/security tests, both
+  frontend unit files, typecheck/build, formatting and Clippy.
+- `cargo build --locked -p splitshare`: PASS with updated embedded frontend.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- setup-wizard.spec.ts host-setup.spec.ts sharing.spec.ts logs.spec.ts`:
+  PASS — 32 tests across desktop/mobile Chromium, Firefox and WebKit.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- setup-wizard.spec.ts`:
+  PASS — four additional checks after final polling-state cleanup.
+- `npm run build --prefix web`: PASS after frontend cleanup.
+- `git diff --check`: PASS.
+
+Native picker cancellation/selection in the wizard browser test uses route fixtures;
+real folder staging, configuration failures, access policy and restart use native
+Rust tests. Real unconfigured/configured processes exercise mandatory UI and port
+navigation. The updated Linux native-picker smoke was syntax-checked via Python
+`py_compile` with output under /tmp, but not rerun because xdotool is unavailable.
+Native picker/opener checks on Windows/macOS/Wayland remain manual. No automated
+mandatory checks are failing; browser navigation after a moved connection is not
+itself a success assertion, and tray Open remains the recovery path.
+- `bash scripts/build-release.sh`: PASS with final embedded wizard and startup fallback.

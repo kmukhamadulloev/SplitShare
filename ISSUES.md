@@ -107,3 +107,9 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 - Preview usability refined with full-screen mobile layout, compact image controls,
   fit reset, text-size adjustment and dedicated audio presentation. Physical-device
   media/codec and accessibility checks remain as listed above.
+
+
+- Mandatory first-run setup now stages the folder privately, applies network/access
+  together and gates file APIs until completion. Port changes move the host browser;
+  tray Open remains recovery if navigation is interrupted. Native picker tests on
+  Windows/macOS and Wayland remain user/device checks, not browser-fixture coverage.

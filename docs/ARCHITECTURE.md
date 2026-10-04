@@ -253,3 +253,11 @@ one service across listener restarts. Capture includes only approved messages an
 structured fields. Axum provides host-only snapshot/config/clear routes and SSE
 notifications using the existing stream limit. Vue consumes this service through
 Settings and a log modal; it never reads native log files or shell output.
+
+Initial setup stages a native sandbox in Host until an application `InitialSetup`
+command supplies validated listener and sharing policy. `HostControl.setup_required`
+keeps file/transfer access gated while the listener starts and configuration is
+persisted. Only the final ready snapshot enables sharing. The same native process
+owns rebind and rollback. A default-port collision on an unconfigured launch may
+use an unsaved temporary loopback listener so the mandatory wizard remains reachable;
+explicit binds and already configured hosts do not silently change ports.

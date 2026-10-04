@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Download, LayoutGrid, List, FolderPlus, RefreshCw, ChevronRight, ArrowUp, Search, MoreHorizontal, Trash2, X, FolderOpen, WifiOff, ShieldAlert, LoaderCircle } from '@lucide/vue'
 import Transfers from './components/Transfers.vue'
 import Sharing from './components/Sharing.vue'
+import SetupWizard from './components/SetupWizard.vue'
 import FileIcon from './components/FileIcon.vue'
 import FileActions from './components/FileActions.vue'
 import FilePreview from './components/FilePreview.vue'
@@ -11,6 +12,7 @@ import { downloadUrl, request, type FileEntry } from './app/api'
 import { fileCategory, typeLabels, formatBytes } from './app/file-types'
 import { showDialog, closeDialog } from './app/dialogs'
 const files = useFiles()
+const sharing = ref<InstanceType<typeof Sharing>>()
 const transfers = ref<InstanceType<typeof Transfers>>()
 const actions = ref<InstanceType<typeof FileActions>>()
 const preview = ref<InstanceType<typeof FilePreview>>()
@@ -91,7 +93,7 @@ onUnmounted(() => { files.stop(); closeDialog(dialog.value); closeDialog(downloa
       <img src="/logo.png" alt="SplitShare" class="logo" />
       <div class="identity"><h1>SplitShare</h1><p><span class="connection" :class="{ online: files.connected }" role="status">{{ files.connected ? 'Connected' : files.initialized ? 'Offline' : 'Connecting…' }}</span><span class="access-label"> · {{ files.status?.local_client ? 'Host access' : allPermissions ? 'Full access' : 'Shared folder' }}</span></p></div>
       <span v-if="files.status" class="mode-badge">{{ files.status.share_mode === 'open_lan' ? 'Open LAN' : 'Private link' }}</span>
-      <div class="host-actions"><Sharing /></div>
+      <div class="host-actions"><Sharing ref="sharing" /></div>
     </header>
     <div class="workspace-tools">
       <nav class="breadcrumbs" aria-label="Breadcrumb">
@@ -113,7 +115,7 @@ onUnmounted(() => { files.stop(); closeDialog(dialog.value); closeDialog(downloa
       <div v-if="!files.initialized || (files.loading && !files.entries.length)" class="empty" role="status"><LoaderCircle class="spinning" :size="28" /><h2>Loading files…</h2><p>Reading the shared folder.</p></div>
       <div v-else-if="files.sessionRequired" class="empty"><ShieldAlert :size="36" /><h2>Share link required</h2><p>Open a current link or scan a QR code from the host to connect.</p></div>
       <div v-else-if="!files.status" class="empty"><WifiOff :size="36" /><h2>Host unavailable</h2><p>Keep this page open to reconnect, or try Refresh.</p></div>
-      <div v-else-if="!files.status.sharing" class="empty"><FolderOpen :size="36" /><h2>No folder is being shared</h2><p v-if="files.status.local_client">Choose a shared folder in host settings, then enable LAN access if you want to connect another device.</p><p v-else>The host has not selected a folder yet.</p><a v-if="files.status.local_client" class="button primary" href="#setup">Set up sharing</a></div>
+      <div v-else-if="!files.status.sharing" class="empty"><FolderOpen :size="36" /><h2>{{ files.status.local_client ? 'No folder is being shared' : 'The host is setting up sharing' }}</h2><p v-if="files.status.local_client">Choose a shared folder in host settings, then enable LAN access if you want to connect another device.</p><p v-else>Please wait for the host to finish setup.</p><a v-if="files.status.local_client" class="button primary" href="#setup">Set up sharing</a></div>
       <div v-else-if="!files.status.permissions.browse" class="empty"><ShieldAlert :size="36" /><h2>Browsing is disabled</h2><p>The host controls which file actions are available.</p></div>
       <div v-else-if="files.error" class="empty"><FolderOpen :size="36" /><h2>Folder unavailable</h2><p>Try again or choose a parent folder from the breadcrumb.</p></div>
       <div v-else-if="!visible.length" class="empty"><Search v-if="search" :size="36" /><FolderOpen v-else :size="36" /><h2>{{ search ? 'No matching files' : 'No files to show' }}</h2><p>{{ search ? 'Try a different name or clear your search.' : 'Files added to this folder will appear here.' }}</p><button v-if="search" class="button" @click="search = ''">Clear search</button></div>
@@ -138,6 +140,7 @@ onUnmounted(() => { files.stop(); closeDialog(dialog.value); closeDialog(downloa
     <div id="transfer-footer"></div>
     <footer class="statusbar"><span>{{ search ? `${visible.length} of ${files.entries.length}` : files.entries.length }} items</span><span>{{ files.status?.root_label ?? 'Shared folder' }} · Trusted private network</span></footer>
     <div v-if="dragging" class="drop-overlay" aria-hidden="true"><FolderPlus :size="42" /><strong>Drop files to upload</strong><span>{{ files.path }}</span></div>
+    <SetupWizard @ready="sharing?.openShare()" />
     <FilePreview ref="preview" :entries="visible" :allowed="!!files.status?.permissions.download && !files.sessionRequired" />
     <FileActions ref="actions" :permissions="files.status?.permissions" @action="menuAction" />
     <dialog ref="dialog" :aria-label="title" @cancel.prevent="close" @click="($event.target === dialog) && close()">
