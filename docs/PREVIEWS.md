@@ -38,3 +38,12 @@ browser. Download keeps its attachment/octet-stream behavior.
 The server does not buffer complete files. The browser bounds text to 256 KiB;
 image decoding still uses browser memory proportional to the image. Very large
 images and physical-device codec/fullscreen behavior require device testing.
+
+## Preview usability refinement
+
+The header shows the filename (full name on hover), file type and size, with
+Download and Close always available. Images have compact previous/next controls,
+a position counter and a Fit reset beside zoom. Text has wrapping and 12–24 px
+font-size controls. Audio uses a dedicated compact desktop player with a decorative
+music icon; video retains native controls. Loading/error states occupy the viewing
+area. Mobile uses the full viewport with safe-area padding and touch-sized controls.

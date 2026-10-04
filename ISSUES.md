@@ -103,3 +103,7 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 - Settings frame size is stable across tabs; long content scrolls inside the
   viewport-bounded dialog with persistent heading and save/cancel actions.
+
+- Preview usability refined with full-screen mobile layout, compact image controls,
+  fit reset, text-size adjustment and dedicated audio presentation. Physical-device
+  media/codec and accessibility checks remain as listed above.

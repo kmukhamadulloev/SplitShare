@@ -262,3 +262,8 @@ Files open through desktop double-click, touch tap, keyboard Enter or the Open
 context action. A shared responsive modal provides native media players, image
 zoom/navigation and bounded read-only text. Loading/errors/retry/download remain
 explicit. Escape closes and stops playback. See [PREVIEWS.md](PREVIEWS.md).
+
+Preview refinement: a fixed header groups filename/type/size with Download/Close.
+The viewing area takes the remaining space; image navigation/zoom and text controls
+are grouped below it. Audio has a compact dedicated desktop frame. Mobile previews
+fill the viewport with safe-area-aware controls. Error/retry states are centered.

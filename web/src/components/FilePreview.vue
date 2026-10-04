@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
-import { Download, X, ZoomIn, ZoomOut } from '@lucide/vue'
+import { Download, X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Maximize, Music2, LoaderCircle, FileWarning, WrapText, Minus, Plus } from '@lucide/vue'
+import { formatBytes } from '../app/file-types'
 import { downloadUrl, type FileEntry } from '../app/api'
 import { showDialog, closeDialog } from '../app/dialogs'
 const props = defineProps<{ allowed: boolean; entries: FileEntry[] }>()
 const dialog = ref<HTMLDialogElement>()
 const entry = ref<FileEntry>()
 const kind = ref(''), url = ref(''), text = ref(''), error = ref('')
+const fontSize = ref(14)
 const loading = ref(false), truncated = ref(false), wrap = ref(true), zoom = ref(1)
 const images = computed(() => props.entries.filter(file => file.kind === 'file' && /\.(png|jpe?g|gif|webp|avif)$/i.test(file.name)))
 const index = computed(() => images.value.findIndex(file => file.path === entry.value?.path))
@@ -78,22 +80,29 @@ onUnmounted(close)
 defineExpose({open,close})
 </script>
 <template>
-  <dialog ref="dialog" class="preview-dialog" aria-label="File preview" @cancel.prevent="close" @keydown="keyboard">
-    <header class="preview-header"><h2>{{ entry?.name }}</h2><button class="icon-btn" aria-label="Close preview" @click="close"><X :size="20" /></button></header>
-    <p v-if="loading" role="status">Loading preview…</p>
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
-    <p v-if="truncated" role="status">Showing the first 256 KiB. Download to read the complete file.</p>
-    <div class="preview-body" tabindex="0" aria-label="Preview content">
-      <img v-if="kind === 'image' && !error" :src="url" :alt="entry?.name" :style="{width:zoom === 1 ? undefined : `${zoom*100}%`,maxWidth:zoom === 1 ? '100%' : 'none',maxHeight:zoom === 1 ? '100%' : 'none'}" @load="loading = false" @error="failed" />
-      <video v-if="kind === 'video' && !error" :src="url" controls playsinline preload="metadata" tabindex="0" aria-label="Video player" @loadedmetadata="loading = false" @error="failed"></video>
-      <audio v-if="kind === 'audio' && !error" :src="url" controls preload="metadata" tabindex="0" aria-label="Audio player" @loadedmetadata="loading = false" @error="failed"></audio>
-      <pre v-if="kind === 'text'" :class="{wrap}">{{ text || 'Empty file.' }}</pre>
+  <dialog ref="dialog" class="preview-dialog" :class="{'preview-audio':kind === 'audio'}" aria-label="File preview" @cancel.prevent="close" @keydown="keyboard">
+    <header class="preview-header">
+      <div class="preview-title"><h2 :title="entry?.name">{{ entry?.name }}</h2><p>{{ kind ? ({image:'Image',video:'Video',audio:'Audio',text:'Text'}[kind]) : 'File preview' }} · {{ formatBytes(entry?.size ?? null) }}<span v-if="kind === 'text'"> · Read only</span></p></div>
+      <a v-if="entry && allowed" class="icon-btn" :href="downloadUrl(entry.path)" download aria-label="Download" title="Download file"><Download :size="20" /></a>
+      <button class="icon-btn" aria-label="Close preview" title="Close (Esc)" @click="close"><X :size="20" /></button>
+    </header>
+    <p v-if="truncated" class="preview-notice" role="status">Showing the first 256 KiB. Download to read the complete file.</p>
+    <div class="preview-stage">
+      <div v-if="loading" class="preview-state" role="status"><LoaderCircle class="spinning" :size="28" /><span>Loading preview…</span></div>
+      <div v-if="error" class="preview-state preview-error" role="alert"><FileWarning :size="36" /><strong>Preview unavailable</strong><p>{{ error }}</p><button v-if="entry" class="button" @click="open(entry)">Retry preview</button><a v-if="entry && allowed" class="button primary" :href="downloadUrl(entry.path)" download>Download file</a></div>
+      <div class="preview-body" :class="{'preview-image-body':kind === 'image' && zoom === 1,'preview-audio-body':kind === 'audio'}" tabindex="0" aria-label="Preview content" :aria-busy="loading" v-show="!error">
+        <img v-if="kind === 'image'" :src="url" :alt="entry?.name" :style="{width:zoom === 1 ? undefined : `${zoom*100}%`,maxWidth:zoom === 1 ? '100%' : 'none',maxHeight:zoom === 1 ? '100%' : 'none'}" @load="loading = false" @error="failed" />
+        <video v-if="kind === 'video'" :src="url" controls playsinline preload="metadata" tabindex="0" aria-label="Video player" @loadedmetadata="loading = false" @error="failed"></video>
+        <template v-if="kind === 'audio'"><div class="audio-art" aria-hidden="true"><Music2 :size="64" /></div><p class="audio-name">{{ entry?.name }}</p><audio :src="url" controls preload="metadata" tabindex="0" aria-label="Audio player" @loadedmetadata="loading = false" @error="failed"></audio></template>
+        <pre v-if="kind === 'text'" :class="{wrap}" :style="{fontSize:`${fontSize}px`}">{{ text || 'Empty file.' }}</pre>
+      </div>
     </div>
-    <footer class="dialog-actions">
-      <template v-if="kind === 'image' && !error"><button class="button" :disabled="index <= 0" @click="navigate(-1)">Previous image</button><button class="button" :disabled="index < 0 || index >= images.length-1" @click="navigate(1)">Next image</button><button class="icon-btn" aria-label="Zoom out" :disabled="zoom <= 1" @click="zoom = Math.max(1,zoom-.5)"><ZoomOut :size="18" /></button><button class="icon-btn" aria-label="Zoom in" :disabled="zoom >= 3" @click="zoom += .5"><ZoomIn :size="18" /></button></template>
-      <button v-if="kind === 'text'" class="button" :aria-pressed="wrap" @click="wrap = !wrap">Wrap text</button>
-      <button v-if="error && entry" class="button" @click="open(entry)">Retry preview</button>
-      <a v-if="entry && allowed" class="button primary" :href="downloadUrl(entry.path)" download><Download :size="18" />Download</a>
+    <footer v-if="!error && (kind === 'image' || kind === 'text')" class="preview-tools">
+      <template v-if="kind === 'image'">
+        <div class="preview-tool-group"><button class="icon-btn" aria-label="Previous image" title="Previous image (←)" :disabled="index <= 0" @click="navigate(-1)"><ChevronLeft :size="20" /></button><span class="preview-count">{{ index + 1 }} / {{ images.length }}</span><button class="icon-btn" aria-label="Next image" title="Next image (→)" :disabled="index < 0 || index >= images.length-1" @click="navigate(1)"><ChevronRight :size="20" /></button></div>
+        <div class="preview-tool-group"><button class="icon-btn" aria-label="Zoom out" title="Zoom out" :disabled="zoom <= 1" @click="zoom = Math.max(1,zoom-.5)"><ZoomOut :size="18" /></button><button class="button preview-fit" aria-label="Fit image" title="Reset to fit" @click="zoom = 1"><Maximize :size="16" />{{ zoom === 1 ? 'Fit' : `${zoom}×` }}</button><button class="icon-btn" aria-label="Zoom in" title="Zoom in" :disabled="zoom >= 3" @click="zoom += .5"><ZoomIn :size="18" /></button></div>
+      </template>
+      <template v-if="kind === 'text'"><button class="button" :aria-pressed="wrap" @click="wrap = !wrap"><WrapText :size="18" />Wrap text</button><div class="preview-tool-group"><button class="icon-btn" aria-label="Smaller text" title="Smaller text" :disabled="fontSize <= 12" @click="fontSize -= 2"><Minus :size="18" /></button><span>{{ fontSize }} px</span><button class="icon-btn" aria-label="Larger text" title="Larger text" :disabled="fontSize >= 24" @click="fontSize += 2"><Plus :size="18" /></button></div></template>
     </footer>
   </dialog>
 </template>

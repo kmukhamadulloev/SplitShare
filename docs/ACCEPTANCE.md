@@ -694,3 +694,25 @@ Both test issues were corrected before the final passing preview/production runs
 Browser media support depends on codecs. Physical iPadOS/Android media controls,
 fullscreen and very large image memory use remain device checks. No transcoding,
 editing or active document rendering is introduced. No failing mandatory checks remain.
+
+## Preview usability refinement — 2026-10-04
+
+- PASS: Compact filename/type/size header with persistent Download/Close; larger
+  centered viewing area and full-screen mobile presentation.
+- PASS: Grouped image navigation with position counter and tested Fit reset.
+- PASS: Text wrapping and tested font-size adjustment; dedicated audio presentation
+  with existing native playback controls. Clear loading/error/retry states.
+- PASS: Preview accessibility, focus restoration, image/text rendering and real
+  audio/video playback/close cleanup across Chromium desktop/mobile, Firefox, WebKit.
+- NOT APPLICABLE: API/backend policy changes; permissions and streaming are unchanged.
+
+Exact validation:
+- `bash scripts/check.sh`: PASS — 68 Rust tests, two frontend unit files,
+  typecheck/build, formatting and Clippy.
+- `cargo build --locked -p splitshare`: PASS.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- preview.spec.ts`:
+  PASS — eight tests. Desktop text/mobile image screenshots visually inspected.
+- `bash scripts/build-release.sh`: PASS.
+- `git diff --check`: PASS.
+
+Physical-device media/codec/accessibility checks remain manual. No new blockers.
