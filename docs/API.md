@@ -229,3 +229,16 @@ existing same-origin checks and `X-SplitShare-Request: 1`.
   refetch the bounded snapshot, also after reconnect. Shares the existing 32-stream
   limit (429 EVENT_LIMIT) and exits on listener shutdown. It works before a folder
   is selected and never publishes logs through remote filesystem SSE.
+
+## File previews
+
+`GET/HEAD /api/v1/files/preview?path=/virtual/file` requires Download capability,
+including the token session rules. It uses the download stream/range implementation
+and shared 32-stream limit. HEAD returns full length and MIME without a body;
+GET supports a single Range and the existing 416/If-Range rules.
+
+Approved extensions receive an allowlisted MIME, inline Content-Disposition,
+no-store, nosniff and `Content-Security-Policy: sandbox; default-src 'none'`.
+Unsupported extensions return 415 PREVIEW_UNAVAILABLE. Text/source/HTML/XML are
+served only as plain UTF-8 text. The browser reads at most 256 KiB for its text view;
+the endpoint itself remains a normal bounded stream. See [PREVIEWS.md](PREVIEWS.md).

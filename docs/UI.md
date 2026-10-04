@@ -179,7 +179,8 @@ covering files, and reports actual upload bytes and terminal outcomes.
 Selection supports individual downloads and confirmed deletion. Download selected
 opens individual links; it does not promise ZIP generation. Bulk deletion stops at
 the first server error and retains only remaining targets for a deliberate retry.
-Unsupported preview and per-file share-link controls are omitted. Settings, QR,
+Per-file share-link controls are omitted. File previews are now implemented as
+described in PREVIEWS.md. Settings, QR,
 file mutations, clipboard and queue controls use the existing real API contracts.
 Keep existing resolves a conflict by cancelling that local upload attempt without
 changing the destination file.
@@ -254,3 +255,10 @@ and restores focus. Errors and disconnected/reconnecting state remain visible.
 Settings keeps a 900 × 640 px desktop frame, capped to the viewport with a 16 px
 outer margin. Mobile settings fills the viewport. Switching sections does not
 resize the frame; the body scrolls while the heading and action buttons stay visible.
+
+## File preview modal
+
+Files open through desktop double-click, touch tap, keyboard Enter or the Open
+context action. A shared responsive modal provides native media players, image
+zoom/navigation and bounded read-only text. Loading/errors/retry/download remain
+explicit. Escape closes and stops playback. See [PREVIEWS.md](PREVIEWS.md).

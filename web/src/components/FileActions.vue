@@ -45,7 +45,8 @@ defineExpose({ open, close })
       <div class="sheet-handle" aria-hidden="true"></div><p class="menu-title">{{ item.name }}</p>
       <div class="menu-actions">
         <button v-if="item.kind === 'directory'" role="menuitem" :disabled="!props.permissions?.browse" @click="action('open')"><FolderOpen :size="19" /><span>Open folder</span></button>
-        <a v-else-if="props.permissions?.download" role="menuitem" :href="downloadUrl(item.path)" download @click="close"><Download :size="19" /><span>Download</span></a>
+        <button v-if="item.kind === 'file' && props.permissions?.download" role="menuitem" @click="action('open')"><FolderOpen :size="19" /><span>Open</span></button>
+        <a v-if="item.kind === 'file' && props.permissions?.download" role="menuitem" :href="downloadUrl(item.path)" download @click="close"><Download :size="19" /><span>Download</span></a>
         <button role="menuitem" :disabled="!props.permissions?.rename" @click="action('rename')"><Pencil :size="19" /><span>Rename</span></button>
         <button role="menuitem" class="danger-text" :disabled="!props.permissions?.delete" @click="action('delete')"><Trash2 :size="19" /><span>Delete</span></button>
       </div>

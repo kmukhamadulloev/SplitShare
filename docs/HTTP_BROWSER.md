@@ -63,7 +63,8 @@ see [API.md](API.md#transport-limits--phase-08).
 File bodies stream through at most 64 KiB application chunks. No complete file is
 buffered. Responses use attachment disposition with RFC 5987 UTF-8 filename encoding,
 `application/octet-stream`, nosniff, no-store, Content-Length and Accept-Ranges.
-Preview MIME allowlists are not implemented.
+The separate preview endpoint uses an allowlisted inline MIME policy; see
+[PREVIEWS.md](PREVIEWS.md).
 
 Supported byte ranges: bounded (`bytes=2-4`), open-ended (`bytes=2-`) and suffix
 (`bytes=-3`). End offsets clamp to EOF. Unsatisfiable, malformed, duplicate or

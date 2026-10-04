@@ -75,3 +75,7 @@ ID, with byte counts, timings and safe typed causes. Debug progress is throttled
 
 Host logging settings and a live log-list modal now expose process-local verbosity
 and the latest 500 safe diagnostic entries, without disrupting remote sessions.
+
+File preview follow-up: image, video, audio and bounded plain-text views use an
+allowlisted preview endpoint with existing download authorization and streaming.
+See docs/PREVIEWS.md and acceptance evidence.

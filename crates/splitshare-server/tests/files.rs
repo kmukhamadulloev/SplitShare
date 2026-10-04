@@ -710,3 +710,67 @@ async fn control_body_deadline_rejects_stalled_mutations_without_publication() {
     server.shutdown.cancel();
     server.task.await.unwrap().unwrap();
 }
+
+#[tokio::test]
+async fn previews_use_safe_types_ranges_and_sandbox() {
+    let server = Server::start().await;
+    for (name, mime) in [
+        ("photo.PNG", "image/png"),
+        ("clip.mp4", "video/mp4"),
+        ("sound.mp3", "audio/mpeg"),
+        ("page.html", "text/plain; charset=utf-8"),
+    ] {
+        std::fs::write(server.root.path().join(name), b"<script>bad</script>").unwrap();
+        let response = server
+            .get(&format!("/api/v1/files/preview?path=/{name}"))
+            .header("range", "bytes=0-3")
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), 206);
+        assert_eq!(response.headers()["content-type"], mime);
+        assert_eq!(
+            response.headers()["content-security-policy"],
+            "sandbox; default-src 'none'"
+        );
+        assert_eq!(response.headers()["x-content-type-options"], "nosniff");
+        assert_eq!(response.headers()["cache-control"], "no-store");
+        assert_eq!(response.headers()["content-range"], "bytes 0-3/20");
+        assert_eq!(response.bytes().await.unwrap().as_ref(), b"<scr");
+    }
+    for name in ["active.svg", "binary.exe"] {
+        std::fs::write(server.root.path().join(name), b"x").unwrap();
+        assert_eq!(
+            server
+                .get(&format!("/api/v1/files/preview?path=/{name}"))
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            415
+        );
+    }
+    assert_eq!(
+        server
+            .get("/api/v1/files/preview?path=/../hello.txt")
+            .send()
+            .await
+            .unwrap()
+            .status(),
+        400
+    );
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink("/etc/passwd", server.root.path().join("escape.txt")).unwrap();
+        assert!(
+            !server
+                .get("/api/v1/files/preview?path=/escape.txt")
+                .send()
+                .await
+                .unwrap()
+                .status()
+                .is_success()
+        );
+    }
+    server.stop().await;
+}

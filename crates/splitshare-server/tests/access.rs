@@ -623,3 +623,59 @@ async fn diagnostics_are_host_only_bounded_and_do_not_revoke_sessions() {
         .unwrap();
     assert_eq!(response.status(), 403);
 }
+
+#[tokio::test]
+async fn preview_requires_download_permission_and_session() {
+    let (_root, state) = state();
+    for method in ["GET", "HEAD"] {
+        assert_eq!(
+            send(
+                &state,
+                false,
+                method,
+                "/api/v1/files/preview?path=/hello.txt",
+                "",
+                ""
+            )
+            .await
+            .status(),
+            401
+        );
+    }
+    let cookie = join(&state).await;
+    assert_eq!(
+        send(
+            &state,
+            false,
+            "GET",
+            "/api/v1/files/preview?path=/hello.txt",
+            &cookie,
+            ""
+        )
+        .await
+        .status(),
+        200
+    );
+    let mut settings = state.sessions.settings();
+    settings.permissions.download = false;
+    state
+        .sessions
+        .update(settings, None, state.transfers.as_ref())
+        .unwrap();
+    let cookie = join(&state).await;
+    for method in ["GET", "HEAD"] {
+        assert_eq!(
+            send(
+                &state,
+                false,
+                method,
+                "/api/v1/files/preview?path=/hello.txt",
+                &cookie,
+                ""
+            )
+            .await
+            .status(),
+            403
+        );
+    }
+}

@@ -118,6 +118,7 @@ pub fn api_router(state: ServerState) -> Router {
         .route("/api/v1/directories", post(api::mkdir))
         .route("/api/v1/files/rename", post(api::rename))
         .route("/api/v1/files/download", get(api::download))
+        .route("/api/v1/files/preview", get(api::preview))
         .route("/api/v1/events", get(api::events))
         .route(
             "/api/v1/uploads",

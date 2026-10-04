@@ -425,3 +425,11 @@ and preservation of remote sessions. `web/tests/logs.spec.ts` changes the runtim
 filter through settings, generates real upload logs, observes SSE updates, searches
 and filters, clears history, exercises failed loads and validates modal accessibility
 and focus restoration. Browser fixtures do not substitute for native OS validation.
+
+File previews: `web/tests/preview.spec.ts` uploads real image/media/text fixtures,
+checks literal HTML rendering, bounded/empty/binary text, unsupported fallback,
+desktop double-click/mobile tap/keyboard opening, image navigation/zoom, native
+WAV/MP4 playback, close cleanup, focus restoration and modal accessibility. Server
+integration tests cover preview authorization, MIME/CSP headers, partial responses,
+traversal and symlink denial. Existing download Range/revocation tests exercise the
+shared stream implementation. Codec/device coverage remains bounded by test engines.

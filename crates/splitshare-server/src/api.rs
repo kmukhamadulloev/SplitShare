@@ -139,7 +139,9 @@ async fn guard_inner(
         }
         let capability = match (request.method(), path) {
             (&Method::GET | &Method::HEAD, "/api/v1/files") => Some(Capability::Browse),
-            (&Method::GET | &Method::HEAD, "/api/v1/files/download") => Some(Capability::Download),
+            (&Method::GET | &Method::HEAD, "/api/v1/files/download" | "/api/v1/files/preview") => {
+                Some(Capability::Download)
+            }
             (&Method::POST, "/api/v1/uploads") => Some(Capability::Upload),
             (&Method::POST, "/api/v1/directories") => Some(Capability::CreateDirectory),
             (&Method::POST, "/api/v1/files/rename") => Some(Capability::Rename),
@@ -333,7 +335,40 @@ pub async fn download(
     headers: HeaderMap,
     request: Result<Query<PathQuery>, QueryRejection>,
 ) -> Result<Response, ApiError> {
-    let path = query(request)?;
+    serve_file(access, state, method, headers, query(request)?, false).await
+}
+
+pub async fn preview(
+    axum::Extension(access): axum::Extension<Access>,
+    State(state): State<ServerState>,
+    method: Method,
+    headers: HeaderMap,
+    request: Result<Query<PathQuery>, QueryRejection>,
+) -> Result<Response, ApiError> {
+    serve_file(access, state, method, headers, query(request)?, true).await
+}
+
+async fn serve_file(
+    access: Access,
+    state: ServerState,
+    method: Method,
+    headers: HeaderMap,
+    path: VirtualPath,
+    preview: bool,
+) -> Result<Response, ApiError> {
+    let mime = if preview {
+        splitshare_core::preview::preview_mime(path.components().last().unwrap_or("")).ok_or_else(
+            || {
+                ApiError::new(
+                    StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                    "PREVIEW_UNAVAILABLE",
+                    "Preview unavailable for this file type.",
+                )
+            },
+        )?
+    } else {
+        "application/octet-stream"
+    };
     let permit = state.downloads.clone().try_acquire_owned().map_err(|_| {
         ApiError::new(
             StatusCode::TOO_MANY_REQUESTS,
@@ -402,17 +437,23 @@ pub async fn download(
     let mut response = (status, body).into_response();
     let headers = response.headers_mut();
     headers.insert(header::CONTENT_LENGTH, length.to_string().parse().unwrap());
-    headers.insert(
-        header::CONTENT_TYPE,
-        "application/octet-stream".parse().unwrap(),
-    );
+    headers.insert(header::CONTENT_TYPE, mime.parse().unwrap());
     headers.insert(header::ACCEPT_RANGES, "bytes".parse().unwrap());
     headers.insert(
         header::CONTENT_DISPOSITION,
-        format!("attachment; filename=\"download\"; filename*=UTF-8''{encoded}")
-            .parse()
-            .unwrap(),
+        format!(
+            "{}; filename=\"download\"; filename*=UTF-8''{encoded}",
+            if preview { "inline" } else { "attachment" }
+        )
+        .parse()
+        .unwrap(),
     );
+    if preview {
+        headers.insert(
+            header::CONTENT_SECURITY_POLICY,
+            "sandbox; default-src 'none'".parse().unwrap(),
+        );
+    }
     if range.is_some() {
         headers.insert(
             header::CONTENT_RANGE,

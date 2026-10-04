@@ -49,7 +49,9 @@ This file tracks real unresolved engineering work. Remove items only when verifi
 
 - [ ] Validate native clipboard copy permissions and paste behavior on Chromium, Firefox and Safari; deterministic paste fixtures cover Chromium/Firefox/WebKit.
 - [ ] Validate multi-file browser download UX; no ZIP generation is planned for v1.
-- [ ] Define preview allowlist by MIME and browser capability.
+- Preview MIME allowlist and safe text rendering are implemented; see docs/PREVIEWS.md.
+- [ ] Verify media codecs, seeking/fullscreen and large-image memory use on physical
+  iPadOS/Android devices. Unsupported codecs fall back to a message and Download.
 
 ## Packaging
 

@@ -131,3 +131,5 @@ pub enum Capability {
     Rename,
     Delete,
 }
+
+pub mod preview;

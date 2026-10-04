@@ -5,6 +5,7 @@ import Transfers from './components/Transfers.vue'
 import Sharing from './components/Sharing.vue'
 import FileIcon from './components/FileIcon.vue'
 import FileActions from './components/FileActions.vue'
+import FilePreview from './components/FilePreview.vue'
 import { useFiles } from './app/files'
 import { downloadUrl, request, type FileEntry } from './app/api'
 import { fileCategory, typeLabels, formatBytes } from './app/file-types'
@@ -12,6 +13,9 @@ import { showDialog, closeDialog } from './app/dialogs'
 const files = useFiles()
 const transfers = ref<InstanceType<typeof Transfers>>()
 const actions = ref<InstanceType<typeof FileActions>>()
+const preview = ref<InstanceType<typeof FilePreview>>()
+function openEntry(entry: FileEntry) { if (entry.kind === 'directory') void files.load(entry.path); else void preview.value?.open(entry) }
+function clickFile(event: MouseEvent, entry: FileEntry) { if (event.detail === 0 || matchMedia('(pointer:coarse)').matches) openEntry(entry) }
 const grid = ref(false)
 const search = ref('')
 const selected = ref<string[]>([])
@@ -67,8 +71,8 @@ async function submit() {
   } catch (cause) { modalError.value = (cause as Error).message; if (deleteAction.value) await files.load() }
   finally { busy.value = false }
 }
-function menuAction(kind: 'open' | 'rename' | 'delete', entry: FileEntry) { if (kind === 'open') void files.load(entry.path); else void open(kind,entry) }
-function fileKey(event: KeyboardEvent, entry: FileEntry) { if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) context(event,entry) }
+function menuAction(kind: 'open' | 'rename' | 'delete', entry: FileEntry) { if (kind === 'open') openEntry(entry); else void open(kind,entry) }
+function fileKey(event: KeyboardEvent, entry: FileEntry) { if (event.key === 'Enter' && event.target === event.currentTarget) { event.preventDefault(); openEntry(entry) } if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) context(event,entry) }
 function dragEnter(event: DragEvent) { if (!files.status?.permissions.upload || !event.dataTransfer?.types.includes('Files') || document.querySelector('dialog[open]')) return; dragDepth++; dragging.value = true }
 function dragLeave() { if (--dragDepth <= 0) { dragDepth = 0; dragging.value = false } }
 function drop(event: DragEvent) { dragging.value = false; dragDepth = 0; transfers.value?.drop(event) }
@@ -119,7 +123,7 @@ onUnmounted(() => { files.stop(); closeDialog(dialog.value); closeDialog(downloa
         <article v-for="entry in pageEntries" :key="entry.path" class="file-item" :class="{selected:selected.includes(entry.path)}" role="listitem" tabindex="0" :aria-label="entry.name" @contextmenu="context($event,entry)" @keydown="fileKey($event,entry)">
           <input v-model="selected" class="item-select" type="checkbox" :value="entry.path" :aria-label="`Select ${entry.name}`" />
           <FileIcon :name="entry.name" :kind="entry.kind" />
-          <div class="file-detail"><button v-if="entry.kind === 'directory'" class="file-name" :title="entry.name" @click="files.load(entry.path)">{{ entry.name }}</button><span v-else class="file-name" :title="entry.name">{{ entry.name }}</span><small>{{ typeLabels[fileCategory(entry.name,entry.kind)] }}<span v-if="entry.kind === 'file'" class="mobile-meta"> · {{ formatBytes(entry.size) }}</span></small></div>
+          <div class="file-detail"><button v-if="entry.kind === 'directory'" class="file-name" :title="entry.name" @click="files.load(entry.path)">{{ entry.name }}</button><button v-else class="file-name" :title="entry.name" :disabled="!files.status?.permissions.download" @click="clickFile($event,entry)" @dblclick="openEntry(entry)">{{ entry.name }}</button><small>{{ typeLabels[fileCategory(entry.name,entry.kind)] }}<span v-if="entry.kind === 'file'" class="mobile-meta"> · {{ formatBytes(entry.size) }}</span></small></div>
           <span class="file-size">{{ entry.kind === 'directory' ? '—' : formatBytes(entry.size) }}</span><time class="modified" :datetime="entry.modified_unix_seconds === null ? undefined : new Date(entry.modified_unix_seconds*1000).toISOString()">{{ modified(entry.modified_unix_seconds) }}</time>
           <div class="file-actions"><a v-if="entry.kind === 'file' && files.status?.permissions.download" :href="downloadUrl(entry.path)" download class="icon-btn download-action" :aria-label="`Download ${entry.name}`"><Download :size="18" /></a><button class="icon-btn" :aria-label="`Actions for ${entry.name}`" @click="context($event,entry)"><MoreHorizontal :size="19" /></button></div>
         </article>
@@ -134,6 +138,7 @@ onUnmounted(() => { files.stop(); closeDialog(dialog.value); closeDialog(downloa
     <div id="transfer-footer"></div>
     <footer class="statusbar"><span>{{ search ? `${visible.length} of ${files.entries.length}` : files.entries.length }} items</span><span>{{ files.status?.root_label ?? 'Shared folder' }} · Trusted private network</span></footer>
     <div v-if="dragging" class="drop-overlay" aria-hidden="true"><FolderPlus :size="42" /><strong>Drop files to upload</strong><span>{{ files.path }}</span></div>
+    <FilePreview ref="preview" :entries="visible" :allowed="!!files.status?.permissions.download && !files.sessionRequired" />
     <FileActions ref="actions" :permissions="files.status?.permissions" @action="menuAction" />
     <dialog ref="dialog" :aria-label="title" @cancel.prevent="close" @click="($event.target === dialog) && close()">
       <form @submit.prevent="submit"><h2>{{ title }}</h2><p v-if="deleteAction">Permanently delete {{ action === 'delete-selected' ? `${targets.length} selected items` : `“${targets[0]?.name}”` }}? Folders must be empty. Type {{ confirmation }} to confirm.</p><p v-else>{{ action === 'create' ? 'Create a folder in the current directory.' : 'Choose a new name for this item.' }}</p>

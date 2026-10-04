@@ -25,6 +25,8 @@ test('accessible layout, keyboard menu, dialogs and reduced motion', async ({pag
   await item.focus(); await page.keyboard.press('Shift+F10')
   const menu = page.getByRole('dialog',{name:'Item actions',exact:true})
   await expect(menu).toBeVisible()
+  await expect(menu.getByRole('menuitem',{name:'Open',exact:true})).toBeFocused()
+  await page.keyboard.press('ArrowDown')
   await expect(menu.getByRole('menuitem',{name:'Download',exact:true})).toBeFocused()
   await page.keyboard.press('ArrowDown')
   await expect(menu.getByRole('menuitem',{name:'Rename',exact:true})).toBeFocused()

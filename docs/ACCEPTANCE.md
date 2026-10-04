@@ -659,3 +659,38 @@ Validation:
 
 Existing physical-device/native-platform checks remain manual; no new blockers.
 - `bash scripts/build-release.sh`: PASS with updated embedded frontend.
+
+## File previews — 2026-10-04
+
+- PASS: Desktop filename double-click, mobile tap, keyboard Enter and Open context
+  action launch the shared preview modal; Escape closes and restores focus.
+- PASS: Images render with fit/zoom and previous/next navigation. Native video/audio
+  players load and play real MP4/WAV fixtures; closing removes players and sources.
+- PASS: UTF-8 text is read-only, selectable and optionally wrapped; previews fetch
+  at most 256 KiB. Empty/truncated/binary text and unsupported files have clear states.
+- PASS: HTML renders literally, without script execution. Inline allowlisted MIME,
+  nosniff, no-store and sandbox CSP retain the existing filesystem security boundary.
+- PASS: GET/HEAD require download permission and a valid session; traversal/symlink
+  escape fails. Media uses the existing bounded Range stream and cancellation rules.
+- PASS: Modal accessibility checks and desktop/mobile layout inspection.
+
+Exact validation:
+- `bash scripts/check.sh`: PASS — 68 Rust unit/integration/security tests, both
+  frontend unit files, typecheck/build, formatting and Clippy.
+- `npm run build --prefix web` and `cargo build --locked -p splitshare`: PASS for
+  final frontend and embedded debug executable.
+- `SPLITSHARE_BROWSER_MATRIX=1 LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- preview.spec.ts production-ui.spec.ts`:
+  PASS — 24 tests across desktop/mobile Chromium, Firefox and WebKit.
+- `LD_LIBRARY_PATH=/tmp/splitshare-playwright-deps/root/usr/lib/x86_64-linux-gnu npm run test:e2e --prefix web -- preview.spec.ts`:
+  PASS — four additional desktop/mobile runs capturing preview screenshots.
+- `bash scripts/build-release.sh`: PASS.
+- `git diff --check`: PASS.
+
+The earlier combined run also exercised browser.spec.ts: 10 passed and two existing
+Firefox/WebKit upload-cancellation skips. New preview fixture uploads initially
+lacked required transfer headers; menu assertions still expected Download first.
+Both test issues were corrected before the final passing preview/production runs.
+
+Browser media support depends on codecs. Physical iPadOS/Android media controls,
+fullscreen and very large image memory use remain device checks. No transcoding,
+editing or active document rendering is introduced. No failing mandatory checks remain.
