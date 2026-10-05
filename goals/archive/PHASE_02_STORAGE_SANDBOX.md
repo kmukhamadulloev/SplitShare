@@ -1,5 +1,7 @@
 # Phase 02 — Storage Sandbox
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 ## Objective
 
 Implement the secure virtual filesystem root.

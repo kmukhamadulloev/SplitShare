@@ -1,6 +1,9 @@
 # Acceptance Matrix
 
-This file accumulates verified release evidence.
+This file accumulates historical validation evidence through 0.1.0. Phase names
+and statements about subsequent work reflect their recorded checkpoint, not the
+current roadmap. The old phase program is archived; see [GOAL.md](../GOAL.md) and
+[ROADMAP.md](../ROADMAP.md). Unchecked items remain unverified, not assigned work.
 
 ## Phase 01
 

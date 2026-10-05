@@ -1,7 +1,7 @@
 {
   "project": "SplitShare",
   "purpose": "Local-first browser-accessible folder sharing over private networks",
-  "active_goal": "goals/PHASE_01_FOUNDATION.md",
+  "active_goal": null,
   "backend": "Rust + Axum + Tokio",
   "frontend": "Vue 3 + TypeScript + Vite + Tailwind CSS + Pinia + @lucide/vue",
   "realtime": "SSE",
@@ -17,5 +17,7 @@
     "public tunnel",
     "account system",
     "WebRTC"
-  ]
+  ],
+  "version": "0.1.0",
+  "roadmap_status": "Future roadmap undefined; historical phases archived"
 }

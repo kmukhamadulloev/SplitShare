@@ -5,8 +5,8 @@
 Current development release checkpoint for the native desktop host and browser
 client. Rust workspace crates, frontend package and lockfiles use **0.1.0**.
 A locally verified Linux x86_64 archive candidate is available through the build
-scripts. No public release or Git tag has been published. The planned 1.0.0
-acceptance program remains in progress.
+scripts. No public release or Git tag has been published. The future route to
+1.0.0 is undefined; the original phase program is archived.
 
 ### Host setup and lifecycle
 
@@ -113,8 +113,8 @@ acceptance program remains in progress.
 - No mobile host application, cloud relay, accounts, multi-root sharing,
   generated multi-selection ZIP download or persistent transfer history.
 
-## Planned — 1.0.0
+## Future versions
 
-The future stable release follows [ROADMAP.md](ROADMAP.md) and the remaining
-[Phase 09](goals/PHASE_09_PACKAGING_V1.md) acceptance gates. Current version 0.1.0
-does not imply those gates have passed. Tagging and publishing are separate actions.
+No next release scope or route to 1.0.0 is defined. [ROADMAP.md](ROADMAP.md)
+records this planning status. Historical phases are archived and no longer assign
+work. The limitations above describe 0.1.0; they are not a promised release plan.

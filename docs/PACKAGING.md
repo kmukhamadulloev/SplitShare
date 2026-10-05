@@ -59,7 +59,7 @@ For each produced artifact:
 7. quit gracefully;
 8. ensure no dependency on repo/node_modules.
 
-## Native tray prerequisites (Phase 07)
+## Native tray prerequisites
 
 Linux builds require GTK3 and Ayatana AppIndicator development packages. On the
 Ubuntu CI image: `libgtk-3-dev libayatana-appindicator3-dev`. Release hosts need the
@@ -68,7 +68,7 @@ implementation. `--no-tray` avoids display initialization, but this desktop bina
 still links GTK libraries. No Node or webview runtime is added.
 
 The native menu embeds the branding PNG. Windows executable resources and macOS
-bundle icons/identity remain packaging work for the release artifact phase.
+bundle icons/identity are not completed by the Linux archive tooling.
 
 ## Linux archive checkpoint
 
@@ -87,5 +87,5 @@ This uses the current machine's native libraries; it is not a clean-distribution
 tray, second-device LAN or QR-scanning acceptance claim.
 
 The current Cargo development version is retained rather than relabeling this
-candidate as v1.0. No tagging or publishing occurs. Third-party license/notice
+candidate as a later release. No tagging or publishing occurs. Third-party license/notice
 collection and distribution compatibility must be completed before public release.

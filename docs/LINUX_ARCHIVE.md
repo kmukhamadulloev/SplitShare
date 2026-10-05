@@ -16,7 +16,7 @@ Open http://localhost:8080 on the host. Change the interface in Settings to allo
 LAN clients, then share the private QR/link. GTK libraries are still required for
 this desktop binary even with `--no-tray`.
 
-This archive is a local development candidate, not a v1.0 release. It targets the
+This archive is a local 0.1.0 development candidate. It targets the
 build machine's Linux ABI; compatibility with older distributions is not proven.
 Native device/tray acceptance and the third-party license/notice audit remain
 release gates. The included LICENSE covers SplitShare itself.

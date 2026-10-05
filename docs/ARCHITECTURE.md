@@ -201,7 +201,7 @@ The backend determines whether a request is host-local using the actual socket p
 
 Host-only settings APIs reject remote clients.
 
-## No database in v1
+## No database in the current implementation
 
 Configuration persistence should use a versioned application-data config file.
 
@@ -211,8 +211,8 @@ If persistent history becomes a future requirement, add it through an explicit m
 
 ## Implemented foundation
 
-See [Phase 01 decisions](FOUNDATION.md) for dependencies, configuration, paths,
-asset serving and lifecycle ownership. Later sections above describe target architecture.
+See [Phase 01 decisions](FOUNDATION.md) for historical dependency and configuration decisions. Current subsystem documents
+and the implementation take precedence over that initial checkpoint.
 
 ## Implemented storage boundary
 

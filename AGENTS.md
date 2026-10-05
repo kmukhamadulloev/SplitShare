@@ -86,7 +86,7 @@ Never serialize:
 
 Path traversal, symlink escape and absolute-path access are release-blocking security bugs.
 
-Symlinks are denied by default in v1.0.
+Symlinks are denied by default in the current implementation.
 
 ## Transfer rule
 
@@ -216,7 +216,8 @@ Stop only when a decision materially changes product scope, network/security mod
 Before coding:
 
 1. Read `GOAL.md`.
-2. Read the active phase.
+2. Read the current user-assigned scope and any active goal referenced by `GOAL.md`.
+   Archived phases are historical context, not work assignments.
 3. Read `docs/ARCHITECTURE.md`.
 4. Read subsystem docs relevant to the task.
 5. Inspect existing code.

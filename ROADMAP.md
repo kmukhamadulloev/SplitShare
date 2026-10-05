@@ -1,60 +1,20 @@
 # SplitShare Roadmap
 
-## Release target
+## Current version
 
-The current development version is **SplitShare 0.1.0**, documented in
-[RELEASE.md](RELEASE.md). The future stable release target is **1.0.0** for
-desktop hosts with browser clients.
+**0.1.0** is the current development release checkpoint. See
+[RELEASE.md](RELEASE.md) for delivered behavior and [ISSUES.md](ISSUES.md) for
+known limitations and checks that have not been performed.
 
-The project intentionally follows a release-quality path instead of an MVP path.
+## Future direction
 
-## Phase status
+The route to **1.0.0 is not defined**. No next version, feature commitments,
+ordered phases, dates or additional platform promises are currently approved.
+Future work will be scoped from user decisions and findings from the current app.
 
-| Phase | Goal | Status |
-|---|---|---|
-| 01 | Foundation | Implemented; local acceptance PASS, native CI pending |
-| 02 | Storage sandbox | Implemented; Linux acceptance PASS, native runtime CI pending |
-| 03 | HTTP + file browsing | Implemented; Linux/browser acceptance PASS, native runtime CI pending |
-| 04 | Transfers + clipboard | Implemented; Linux/browser acceptance PASS, native runtime CI pending |
-| 05 | Sessions + permissions + QR | Implemented; Linux/browser acceptance PASS, native/device validation pending |
-| 06 | Production WebUI | Implemented; Linux/browser acceptance PASS, native/device validation pending |
-| 07 | Desktop tray + lifecycle | Implemented; Linux PASS; Windows/macOS manual validation owned by user |
-| 08 | Reliability + security + performance | Implemented; local acceptance PASS; host setup correction verified; native/device follow-ups recorded |
-| 09 | Packaging + v1.0 acceptance | In progress: Linux archive candidate; final platform/device and license gates pending |
+The old phase program and speculative post-v1 feature list are retired. Historical
+plans are available in [goals/archive](goals/archive/README.md); they do not assign
+work or define requirements for a future release.
 
-## v1.0 definition
-
-v1.0 is not reached until:
-
-- a selected folder can be safely shared;
-- remote browsers can browse it using virtual paths;
-- upload/download are streamed;
-- parallel uploads are bounded by host configuration;
-- text/image/file paste behaves correctly;
-- List/Grid UI and desktop/mobile interactions work;
-- token join and optional open-LAN access work;
-- QR is generated locally;
-- Range responses work;
-- host settings are protected from remote mutation;
-- native system tray works on release targets;
-- graceful shutdown does not leave partial transfers marked complete;
-- traversal/symlink/filename tests pass;
-- large-file memory usage remains bounded;
-- production frontend is embedded;
-- release archives start on supported targets;
-- documentation and acceptance evidence are current.
-
-## Post-v1 candidates
-
-These are intentionally not approved v1 scope:
-
-- mobile host shell backed by Rust native library;
-- persistent transfer history database;
-- mDNS discovery UI;
-- resumable uploads across process restart;
-- generated ZIP download for multi-selection;
-- multiple simultaneous share roots;
-- read-only public guest session profiles;
-- optional end-to-end encrypted remote relay.
-
-Each requires an explicit future goal before implementation.
+Open issues and packaging checks remain useful records of current limitations.
+Their presence does not schedule them or establish a new release plan.

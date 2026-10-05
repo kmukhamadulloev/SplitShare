@@ -1,5 +1,7 @@
 # Phase 05 — Sessions, Permissions and QR
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 ## Objective
 
 Implement private-network access control and share capabilities.

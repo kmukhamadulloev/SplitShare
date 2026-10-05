@@ -1,5 +1,7 @@
 # Host setup correction
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 The user reported missing network/folder controls and unusable QR sharing after
 Phase 08. Correct this before packaging; prior phase evidence did not cover a
 first launch without CLI configuration.

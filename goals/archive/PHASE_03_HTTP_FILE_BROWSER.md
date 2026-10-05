@@ -1,5 +1,7 @@
 # Phase 03 — HTTP and File Browsing
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 ## Objective
 
 Expose the real storage sandbox through a typed Axum API and embedded browser client foundation.

@@ -1,5 +1,7 @@
 # Phase 08 — Reliability, Security and Performance
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 ## Objective
 
 Harden the complete product before packaging.

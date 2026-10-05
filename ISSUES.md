@@ -1,6 +1,8 @@
 # Known Issues / Open Decisions
 
-This file tracks real unresolved engineering work. Remove items only when verified.
+This file tracks real limitations, unresolved decisions and unverified checks in
+0.1.0. It is not an assigned backlog or a roadmap to 1.0.0. Remove items only when
+verified; schedule work only when its scope is chosen.
 
 ## Foundation
 

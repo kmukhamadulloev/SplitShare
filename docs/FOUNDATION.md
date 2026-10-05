@@ -1,4 +1,10 @@
-# Phase 01 implementation decisions
+# Historical foundation decisions
+
+This document records the initial foundation checkpoint. Its dependency choices,
+phase references and runnable-scope section describe that time, not current 0.1.0
+behavior or future assignments. For current behavior see [architecture](ARCHITECTURE.md),
+[host setup](HOST_SETUP.md), [tray implementation](TRAY.md) and
+[release notes](../RELEASE.md).
 
 Rust MSRV is 1.98 (edition 2024), matching the installed and CI toolchain.
 Cargo.lock and web/package-lock.json lock reproducible application builds.

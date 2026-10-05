@@ -1,5 +1,7 @@
 # Phase 06 — Production WebUI
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 ## Objective
 
 Replace scaffold UI with the approved full SplitShare file-manager experience.
@@ -41,5 +43,5 @@ Replace scaffold UI with the approved full SplitShare file-manager experience.
 ## Completion
 
 Local acceptance PASS on 2026-09-30. All five criteria have individual evidence in
-[the acceptance matrix](../docs/ACCEPTANCE.md#phase-06-local-acceptance--2026-09-30).
+[the acceptance matrix](../../docs/ACCEPTANCE.md#phase-06-local-acceptance--2026-09-30).
 Native/device and cross-browser release gates remain tracked in `ISSUES.md`.

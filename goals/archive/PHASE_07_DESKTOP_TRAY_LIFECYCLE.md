@@ -1,5 +1,7 @@
 # Phase 07 — Desktop Tray and Host Lifecycle
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 ## Objective
 
 Turn SplitShare into a polished native desktop host without adding a desktop webview framework.

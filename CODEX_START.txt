@@ -4,14 +4,16 @@ Read in this exact order:
 
 1. AGENTS.md
 2. GOAL.md
-3. the active phase referenced by GOAL.md
+3. the current user request and any active goal referenced by GOAL.md
 4. docs/ARCHITECTURE.md
 5. docs/UI.md
 6. relevant subsystem docs
 7. ISSUES.md
 8. existing source code
 
-The repository is release-oriented. Do not reduce a phase to an MVP shortcut.
+Current version: 0.1.0. No next phase or route to 1.0.0 is assigned.
+Archived plans are historical context only. Preserve the engineering and security
+requirements when implementing newly requested work.
 
 The visual source of truth is:
 prototype/splitshare-ui/index.html
@@ -27,4 +29,4 @@ Core rules:
 - path traversal/symlink escape are release blockers.
 - frontend and backend ship in one native desktop release.
 
-Implement the active goal completely, run relevant checks, update docs/issues, then report acceptance criteria one by one.
+Implement the user-assigned scope completely, run relevant checks, update docs/issues, then report acceptance criteria one by one.

@@ -1,5 +1,7 @@
 # Phase 09 — Packaging and v1.0 Acceptance
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 ## Objective
 
 Produce verifiable release artifacts.

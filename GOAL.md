@@ -1,95 +1,25 @@
-# Current Goal — Linux packaging checkpoint
+# Current project status — 0.1.0
 
-The active implementation goal is:
+SplitShare's current version is **0.1.0**. Implemented functionality and known
+limitations are recorded in [RELEASE.md](RELEASE.md).
 
-`goals/PHASE_09_PACKAGING_V1.md`
+## Active work
 
-## Current version
+No next feature, phase or release milestone is assigned. Follow the user's current
+request; define its scope and acceptance criteria before implementation. Do not
+infer a next phase from the archived plans or treat open issues as an instruction
+to implement them automatically.
 
-**0.1.0** is the current development release checkpoint. [RELEASE.md](RELEASE.md)
-records all implemented work and remaining limits. The future stable target is
-1.0.0; Phase 09 acceptance is still in progress.
+The road to 1.0.0 is unknown and will be planned separately. There is no committed
+feature list, phase sequence, schedule or platform expansion for that version.
 
-## Product release program
+## References
 
-SplitShare v1.0 is delivered through ordered phases:
+- [ROADMAP.md](ROADMAP.md): planning status.
+- [ISSUES.md](ISSUES.md): real defects, limitations and unverified environments.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): current architecture and boundaries.
+- [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md): accumulated validation evidence.
+- [Archived plans](goals/archive/README.md): historical context only.
 
-1. Foundation
-2. Storage sandbox
-3. HTTP + file browsing
-4. Transfers + clipboard
-5. Sessions + permissions + QR
-6. Production WebUI
-7. Desktop tray + host lifecycle
-8. Reliability + security + performance
-9. Packaging + v1.0 acceptance
-
-Do not skip phases by fabricating later behavior. A phase may prepare interfaces needed by later work, but it must leave the repository internally consistent and tested.
-
-## Scope boundary
-
-Current release scope:
-
-- Windows host
-- Linux host
-- macOS host
-- browser clients on desktop/mobile
-- local/private networks
-
-Not in current v1.0 implementation:
-
-- Android host app
-- iOS host app
-- public relay
-- cloud service
-- account system
-- internet tunnel
-
-Future mobile host work may reuse the Rust core through a native library, but current architecture must not be distorted to implement it prematurely.
-
-## Latest checkpoint
-
-The user's first-run report exposed missing folder/network setup controls that
-previous Phase 08 tests did not cover. The host setup correction is implemented and locally verified before
-Phase 09 packaging: native folder selection, persistent interface/port controls,
-honest QR readiness and first-run guidance now have integration/browser coverage.
-See docs/HOST_SETUP.md and the correction section of docs/ACCEPTANCE.md.
-
-Phase 08 backend hardening remains delivered. Windows/macOS native checks remain
-user-owned; no unexecuted checks are marked PASS.
-
-Clipboard refinement: Paste now always opens one editable modal. A native paste
-turns it into image confirmation or a text draft with filename/extension editing.
-Ctrl+V remains supported. Upload opens the native file picker on all devices;
-duplicate upload sheets, picker alternatives and automatic clipboard reads are
-removed. Physical iPad/Android paste-menu behavior remains a device acceptance
-check. See docs/ACCEPTANCE.md for validation.
-
-Interface cleanup: network settings now use one Save changes action, without a
-duplicate apply button or address summary. QR hides unavailable fields and empty
-notices while preserving error recovery.
-
-File browsing now groups folders before files in both views, before search and
-pagination, preserving name order within each group.
-
-Upload keep-awake is opt-in through the transfer bar: native wake lock where
-available, bundled silent-video fallback on HTTP. Actual sleep prevention on
-physical phones/tablets remains device-dependent and must be manually verified.
-
-Upload diagnostics now correlate lifecycle and stage-specific failures by transfer
-ID, with byte counts, timings and safe typed causes. Debug progress is throttled.
-
-Host logging settings and a live log-list modal now expose process-local verbosity
-and the latest 500 safe diagnostic entries, without disrupting remote sessions.
-
-File preview follow-up: image, video, audio and bounded plain-text views use an
-allowlisted preview endpoint with existing download authorization and streaming.
-See docs/PREVIEWS.md and acceptance evidence.
-
-Mandatory onboarding: unconfigured hosts use a non-dismissible folder/connection/
-access wizard. Selection stays private until listener startup and persistence succeed;
-port changes reuse the native process and move the host browser. See docs/HOST_SETUP.md.
-
-Phase 09 starts with a native Linux archive candidate and extracted-archive smoke
-validation. Windows/macOS checks remain user-owned. Publishing, tagging and a
-v1.0 completion claim are outside this checkpoint.
+The existing product, security and engineering rules in [AGENTS.md](AGENTS.md)
+remain in force. Windows/macOS native checks remain user-owned.

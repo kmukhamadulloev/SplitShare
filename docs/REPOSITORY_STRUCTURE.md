@@ -8,6 +8,7 @@ SplitShare/
 │       ├── Cargo.toml
 │       └── src/main.rs
 ├── crates/
+│   ├── splitshare-application/
 │   ├── splitshare-core/
 │   ├── splitshare-storage/
 │   ├── splitshare-network/
@@ -36,16 +37,7 @@ SplitShare/
 │   ├── TRAY.md
 │   ├── UI.md
 │   └── openapi.yaml
-├── goals/
-│   ├── PHASE_01_FOUNDATION.md
-│   ├── PHASE_02_STORAGE_SANDBOX.md
-│   ├── PHASE_03_HTTP_FILE_BROWSER.md
-│   ├── PHASE_04_TRANSFERS_CLIPBOARD.md
-│   ├── PHASE_05_SESSIONS_PERMISSIONS_QR.md
-│   ├── PHASE_06_PRODUCTION_WEBUI.md
-│   ├── PHASE_07_DESKTOP_TRAY_LIFECYCLE.md
-│   ├── PHASE_08_RELIABILITY_SECURITY_PERFORMANCE.md
-│   └── PHASE_09_PACKAGING_V1.md
+├── goals/archive/            # superseded implementation plans
 ├── skills/
 ├── scripts/
 ├── AGENTS.md
@@ -67,3 +59,7 @@ Phase 05 adds `splitshare-application/src/sessions.rs` for session/policy rules,
 `splitshare-server/src/access.rs` for cookie and host configuration adapters,
 `web/src/components/Sharing.vue` for settings/QR, and `docs/SESSIONS.md` for policy.
 The native config adapter persists settings; token/session data remains in memory.
+
+Current version is 0.1.0. `GOAL.md` records active work, if assigned; archived
+plans do not prescribe future work. `project.json` has no active goal until one
+is assigned.

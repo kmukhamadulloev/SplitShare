@@ -1,5 +1,7 @@
 # Phase 04 — Transfers and Clipboard
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 ## Objective
 
 Implement real uploads, bounded concurrency and clipboard workflows.

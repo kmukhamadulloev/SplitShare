@@ -43,7 +43,7 @@ The UI must clearly show that any reachable allowed client may connect.
 
 ### Manual approval
 
-Not required for initial release unless the active phase explicitly implements the complete approval flow. Do not expose a non-functional setting.
+Not implemented in 0.1.0. Add only if a future user-approved scope includes the complete approval flow. Do not expose a non-functional setting.
 
 ## Cookies
 
@@ -94,7 +94,7 @@ Do not impose an arbitrary file-size ceiling unless required by platform constra
 
 ## Security acceptance
 
-Mandatory before v1:
+Required security regression coverage:
 
 - traversal fuzz/regression tests;
 - encoded traversal cases;

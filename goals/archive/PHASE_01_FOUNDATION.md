@@ -1,5 +1,7 @@
 # Phase 01 — Foundation
 
+> Archived historical plan. Superseded as a work assignment; see [archive status](README.md).
+
 ## Objective
 
 Create the real monorepo foundation and architecture boundaries before feature work.

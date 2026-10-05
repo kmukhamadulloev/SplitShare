@@ -79,7 +79,7 @@ SplitShare/
 ├── prototype/
 │   └── splitshare-ui/         # visual source of truth
 ├── docs/
-├── goals/
+├── goals/archive/             # historical implementation plans
 ├── skills/
 ├── scripts/
 └── .github/workflows/
@@ -116,7 +116,7 @@ SSE for server-to-browser state changes. Commands remain ordinary HTTP requests.
 
 ### Persistence
 
-SplitShare v1.0 does **not** require a database.
+SplitShare 0.1.0 does **not** require a database.
 
 - durable host configuration -> application-data config file;
 - active sessions/transfers -> in memory;
@@ -141,16 +141,9 @@ The archive and SHA-256 checksum are written under `release/`. See
 
 ## Development
 
-Phase 03 supports real HTTP browsing, file mutations, streamed downloads/Range,
-SSE and the initial file-manager UI. Phase 04 adds streamed uploads, an enforced
-parallel queue, cancellation/retry and clipboard workflows. Phase 05 adds token
-sessions, remote permissions, persisted host settings and local QR sharing. Phase 06
-adds the responsive production file manager, typed icons, selection actions,
-accessible menus/dialogs and reconnect recovery. Phase 07 adds a native tray and
-Start/Stop/Quit lifecycle (Windows/macOS native smoke is user-owned follow-up).
-Phase 08 adds transport deadlines, bounded connections, truthful uncertain-upload
-recovery and measured directory paging. See [running and access policy](docs/HTTP_BROWSER.md).
-See [foundation decisions](docs/FOUNDATION.md). Rust 1.98+ and Node 24+ are required for development.
+Current functionality is summarized in [RELEASE.md](RELEASE.md). Technical details
+are in [architecture](docs/ARCHITECTURE.md), [HTTP behavior](docs/HTTP_BROWSER.md)
+and the subsystem documents. Rust 1.98+ and Node 24+ are required for development.
 
 ```bash
 npm ci --prefix web
@@ -189,15 +182,18 @@ Implementation agents must read:
 
 1. `AGENTS.md`
 2. `GOAL.md`
-3. the active file under `goals/`
+3. the current user request and any active goal referenced by `GOAL.md`
 4. relevant subsystem documentation under `docs/`
 5. `prototype/splitshare-ui/index.html` for visual/interaction behavior
 
 ## Current scope
 
-The current release program targets the **desktop host + browser client** product for Windows, Linux and macOS.
+Version 0.1.0 implements the **desktop host + browser client** product. Linux has
+local validation; Windows/macOS native verification remains user-owned. Mobile
+devices use a browser; native mobile host apps are not implemented.
 
-A future mobile host may reuse the Rust core as a native library and use a thin platform shell, but mobile-host implementation is intentionally outside the current v1.0 phases.
+The route to 1.0.0 is undefined. Historical phase plans are archived; future
+features and platform scope will be decided separately. See [ROADMAP.md](ROADMAP.md).
 
 ## License
 
