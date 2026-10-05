@@ -143,8 +143,9 @@ The script builds frontend assets before Rust because they are compile-time inpu
 `bash scripts/build-release.sh` builds the standalone binary.
 On Linux, `python3 scripts/smoke-foundation.py` runs a copied release binary in a
 fresh temporary directory with isolated config, checks assets and unavailable
-API/join routes, and verifies SIGTERM exit and token-log redaction. Port 8080 must
-be available. Later-phase test lists above remain planned.
+API/join routes, and verifies SIGTERM exit and token-log redaction. It selects a
+temporary loopback port; port 8080 does not need to be available. Historical phase
+checklists above do not assign future work.
 
 ## Phase 02 storage checks
 
