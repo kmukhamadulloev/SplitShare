@@ -443,3 +443,8 @@ occupied-port recovery, automatic origin navigation and persistence. Native pick
 cancellation/selection and final wizard step progression use explicit browser route
 fixtures; these do not claim OS picker coverage. Existing platform picker smoke
 and manual Windows/macOS/Wayland validation remain separate.
+
+The foundation smoke starts an unconfigured copied release binary on an explicit
+temporary loopback port. It checks mandatory setup and disabled sharing: file API
+requests return `503 SETUP_REQUIRED`, while a join without a share returns
+`503 SHARE_NOT_CONFIGURED`. Error assertions include endpoint and actual payload.

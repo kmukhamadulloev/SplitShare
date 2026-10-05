@@ -803,3 +803,15 @@ no-follow checks and atomic conflict policy; there is no path-based fallback.
   directory moves, reporting native I/O errors on failure. A native CI rerun is
   required to confirm resolution of the reported upload failure.
 - Browser E2E: NOT APPLICABLE to this Windows storage adapter change.
+
+## Foundation smoke setup contract — 2026-10-05
+
+- PASS — `bash scripts/build-release.sh && python3 scripts/smoke-foundation.py`: fresh
+  frontend typecheck/build and locked Rust release build; copied-binary smoke verifies
+  embedded assets, required onboarding, disabled sharing, file API `SETUP_REQUIRED`,
+  join `SHARE_NOT_CONFIGURED`, config creation, clean SIGTERM and token log redaction.
+- The smoke uses an explicit temporary loopback port instead of assuming 8080 and
+  reports the endpoint, actual payload and expected code on error-code mismatch.
+- PASS — Python AST syntax check and `git diff --check`.
+- Additional Rust unit/browser suites: NOT APPLICABLE; this change updates the CI
+  smoke contract and documentation without changing application behavior.

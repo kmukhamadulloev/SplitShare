@@ -41,6 +41,9 @@
 
 ### Fixed
 
+- Linux CI smoke test expectations for mandatory first-run setup, with isolated
+  test ports and clearer assertion failures.
+
 - Windows rename adapter now uses the native handle-relative API for upload
   publication and file moves, with NTSTATUS-to-I/O error conversion.
 
