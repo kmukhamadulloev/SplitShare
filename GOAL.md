@@ -4,6 +4,12 @@ The active implementation goal is:
 
 `goals/PHASE_09_PACKAGING_V1.md`
 
+## Current version
+
+**0.1.0** is the current development release checkpoint. [RELEASE.md](RELEASE.md)
+records all implemented work and remaining limits. The future stable target is
+1.0.0; Phase 09 acceptance is still in progress.
+
 ## Product release program
 
 SplitShare v1.0 is delivered through ordered phases:

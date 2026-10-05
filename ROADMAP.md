@@ -2,7 +2,9 @@
 
 ## Release target
 
-The first release target is **SplitShare 1.0.0** for desktop hosts with browser clients.
+The current development version is **SplitShare 0.1.0**, documented in
+[RELEASE.md](RELEASE.md). The future stable release target is **1.0.0** for
+desktop hosts with browser clients.
 
 The project intentionally follows a release-quality path instead of an MVP path.
 

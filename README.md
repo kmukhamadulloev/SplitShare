@@ -2,6 +2,9 @@
 
 SplitShare is a local-first, cross-platform folder sharing application.
 
+Current version: **0.1.0** — development release checkpoint. See
+[release notes](RELEASE.md) for implemented features, validation and limitations.
+
 One device runs SplitShare and exposes a selected folder over the local network. Other devices do **not** need SplitShare installed: they open the host address in a browser, browse the shared virtual filesystem, download files, upload files, create folders, rename items, paste clipboard content, and use the interface from desktop or mobile.
 
 **No cloud · No accounts · No external server · No mandatory internet · No Tauri · No Electron**
@@ -123,12 +126,18 @@ A database may be added only by an explicit later goal that requires persistent 
 
 ## Use SplitShare
 
-Run the rebuilt native app with `./target/release/splitshare --open`. On first launch,
-click **Set up sharing**, choose a folder in the native dialog, then enable
-**All interfaces (LAN / VPN)** under **network**. Open the QR dialog and select a
-reachable LAN address for the other device. Folder/listener choices are saved.
+Run the rebuilt native app with `./target/release/splitshare --open`. First launch
+opens mandatory setup: choose a folder in the native dialog, select the network
+interface and port (default **8080**), then choose access policy and start sharing.
+Sharing stays disabled until setup completes. Open the QR dialog and select a
+reachable LAN address for the other device. Folder/listener choices persist;
+subsequent port changes apply without restarting the native process.
 See [host setup and troubleshooting](docs/HOST_SETUP.md) for complete steps and
 terminal/headless commands.
+
+To build a verified Linux archive candidate, run `python3 scripts/package-linux.py`.
+The archive and SHA-256 checksum are written under `release/`. See
+[packaging prerequisites and limits](docs/PACKAGING.md).
 
 ## Development
 
