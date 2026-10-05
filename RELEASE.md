@@ -41,6 +41,9 @@
 
 ### Fixed
 
+- Windows sandbox regression handles an OS-blocked upload-directory swap while
+  retaining cleanup and symlink-escape assertions.
+
 - Linux CI smoke test expectations for mandatory first-run setup, with isolated
   test ports and clearer assertion failures.
 

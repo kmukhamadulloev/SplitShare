@@ -222,7 +222,38 @@ fn swapped_upload_parent_cannot_publish_outside_root() {
         .begin_upload(&path("/destination/file"), Some(1))
         .unwrap();
     writer.write_chunk(b"x").unwrap();
-    fs::rename(root.path().join("destination"), root.path().join("old")).unwrap();
+    let swap = fs::rename(root.path().join("destination"), root.path().join("old"));
+    #[cfg(windows)]
+    if let Err(error) = &swap {
+        // Windows may prevent renaming a directory containing an open upload.
+        // Only this precise sharing violation is a valid blocked-swap outcome;
+        // other failures must still fail the regression.
+        assert_eq!(error.raw_os_error(), Some(32), "{error:?}");
+        assert!(!root.path().join("old").exists());
+        assert!(!root.path().join("destination/file").exists());
+        assert_eq!(fs::read_dir(outside.path()).unwrap().count(), 0);
+        drop(writer);
+        assert_eq!(
+            fs::read_dir(root.path().join("destination"))
+                .unwrap()
+                .count(),
+            0
+        );
+
+        // Once handles are released, perform the actual swap and verify that a
+        // fresh upload rejects the replacement link rather than writing outside.
+        fs::rename(root.path().join("destination"), root.path().join("old")).unwrap();
+        symlink_dir(outside.path(), &root.path().join("destination"));
+        assert!(
+            storage
+                .begin_upload(&path("/destination/file"), Some(1))
+                .is_err()
+        );
+        assert_eq!(fs::read_dir(outside.path()).unwrap().count(), 0);
+        assert_eq!(fs::read_dir(root.path().join("old")).unwrap().count(), 0);
+        return;
+    }
+    swap.unwrap();
     symlink_dir(outside.path(), &root.path().join("destination"));
     assert!(writer.publish(Policy::Reject).is_err());
     assert_eq!(fs::read_dir(outside.path()).unwrap().count(), 0);

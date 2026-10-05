@@ -815,3 +815,22 @@ no-follow checks and atomic conflict policy; there is no path-based fallback.
 - PASS — Python AST syntax check and `git diff --check`.
 - Additional Rust unit/browser suites: NOT APPLICABLE; this change updates the CI
   smoke contract and documentation without changing application behavior.
+
+## Windows upload-parent swap regression — 2026-10-05
+
+The reported Windows failure is an OS sharing violation during the test's native
+directory rename, before publication. The regression now accepts only Windows
+error 32 as a blocked swap, verifies that no completed file or outside data exists,
+and checks partial cleanup on upload drop. It then performs the swap after closing
+the upload and verifies that a new upload rejects the symlink. On systems allowing
+the live swap, the original publication rejection and cleanup checks still run.
+No production filesystem policy or handles were changed.
+
+- PASS — `cargo test --locked -p splitshare-storage --test sandbox`: 11 Linux tests.
+- PASS — `cargo test --locked -p splitshare-storage`: storage unit/integration/doc tests.
+- PASS — `cargo clippy --locked -p splitshare-storage --all-targets -- -D warnings`.
+- PASS — `cargo clippy --locked -p splitshare-storage --all-targets
+  --target x86_64-pc-windows-msvc -- -D warnings`.
+- PASS — `cargo fmt --check` and `git diff --check`.
+- Native Windows branch: execution remains pending the user's CI rerun.
+- Frontend/browser checks: NOT APPLICABLE; only a storage test and docs changed.

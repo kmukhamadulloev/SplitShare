@@ -14,6 +14,10 @@ verified; schedule work only when its scope is chosen.
 
 ## Storage
 
+- [ ] Rerun Windows sandbox CI after adapting the upload-parent swap regression
+  for sharing violation 32. Linux tests and Windows-target compilation pass;
+  the new native Windows branch has not been executed locally.
+
 - [ ] Rerun native Windows CI after the reported `transfer_logging` upload failure
   (`Storage(Io)`). The rename adapter now uses `NtSetInformationFile` and has a
   focused native regression for conflicts, replacement, Unicode and directory
