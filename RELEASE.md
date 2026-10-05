@@ -41,6 +41,9 @@
 
 ### Fixed
 
+- Windows rename adapter now uses the native handle-relative API for upload
+  publication and file moves, with NTSTATUS-to-I/O error conversion.
+
 - Clipboard images being interpreted as text when mixed clipboard data is present.
 - Paste-button behavior on HTTP LAN addresses by using native paste events.
 - Missing folder/network setup controls and unhelpful QR readiness states.

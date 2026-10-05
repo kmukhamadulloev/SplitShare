@@ -14,7 +14,10 @@ verified; schedule work only when its scope is chosen.
 
 ## Storage
 
-- [ ] Validate the handle-relative Windows rename/replace implementation on native NTFS; implementation cross-compiles but has not run locally.
+- [ ] Rerun native Windows CI after the reported `transfer_logging` upload failure
+  (`Storage(Io)`). The rename adapter now uses `NtSetInformationFile` and has a
+  focused native regression for conflicts, replacement, Unicode and directory
+  moves. Windows cross-target Clippy passes; native execution remains unverified.
 - [ ] Confirm filesystem behavior when the shared folder resides on a network filesystem.
 - Unicode policy resolved: preserve bytes; native filesystem decides case/normalization conflicts (see `docs/STORAGE.md`).
 - [ ] Execute native Windows/macOS link, reparse, and rename tests; Linux tests and Windows/macOS cross-target Clippy pass.

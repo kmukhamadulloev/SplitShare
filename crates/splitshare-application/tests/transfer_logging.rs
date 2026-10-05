@@ -68,7 +68,13 @@ async fn upload_logs_correlate_failures_without_leaking_paths_keys_or_error_text
                 futures_util::stream::iter([Ok::<_, io::Error>(b"abc".to_vec())]),
             )
             .await
-            .unwrap();
+            .unwrap_or_else(|error| {
+                let log = output.0.lock().unwrap();
+                panic!(
+                    "Initial upload failed: {error:?}\nCaptured diagnostics:\n{}",
+                    String::from_utf8_lossy(&log)
+                );
+            });
         let error = io::Error::new(
             io::ErrorKind::ConnectionReset,
             "SECRET /home/private/image.jpg token=secret",

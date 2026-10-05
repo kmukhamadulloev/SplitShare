@@ -161,7 +161,9 @@ tries `name (1)` through `name (1000)`; generated names must pass the same parse
 `Replace` only replaces regular files and never edits the existing inode in place.
 No-clobber rename uses OS atomic primitives, not an existence check followed by
 ordinary overwrite rename. Linux/macOS use rustix `renameat_with(NOREPLACE)`;
-Windows uses handle-relative `SetFileInformationByHandle` with replacement disabled.
+Windows uses handle-relative `NtSetInformationFile(FileRenameInformation)` with
+replacement disabled. NTSTATUS failures are translated to Win32 I/O errors before
+mapping to public storage errors; source/destination paths remain capability-relative.
 Windows replacement also uses the handle-relative adapter. Unsupported filesystems
 fail the operation; there is no unsafe check-then-rename fallback.
 
@@ -182,7 +184,7 @@ has a documented aligned-buffer and borrowed-handle safety boundary.
 
 References: [capability confinement](https://github.com/bytecodealliance/cap-std),
 [no-follow directory opening](https://docs.rs/cap-fs-ext/4.0.3/cap_fs_ext/trait.DirExt.html),
-[Windows rename structure](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_rename_info).
+[Windows native rename API](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntsetinformationfile).
 
 The sandbox protects against untrusted client paths and link traversal. It is not
 an OS sandbox against another privileged local process: an administrator can move

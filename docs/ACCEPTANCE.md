@@ -781,3 +781,25 @@ itself a success assertion, and tray Open remains the recovery path.
   verification, third-party notices, separate-device LAN/QR and remaining native
   platform/device checks still apply. Empty PATH smoke does not exercise tray or
   native folder dialogs. No v1.0 tag or public release is produced.
+
+## Windows upload publication follow-up — 2026-10-05
+
+User-provided Windows CI output reports `Storage(Io)` during the initial upload
+in `transfer_logging`, before log assertions. The handle-relative rename adapter
+now calls `NtSetInformationFile(FileRenameInformation)` directly and translates
+NTSTATUS errors with `RtlNtStatusToDosError`. It preserves directory capabilities,
+no-follow checks and atomic conflict policy; there is no path-based fallback.
+
+- PASS — `bash scripts/check.sh`: Linux workspace format/Clippy/unit/integration
+  tests and frontend type/unit/build checks.
+- PASS — `cargo test --locked -p splitshare-application --test transfer_logging`
+  after adding captured-stage diagnostics to its initial upload failure.
+- PASS — `cargo clippy --locked -p splitshare-storage -p splitshare-application
+  --all-targets --target x86_64-pc-windows-msvc -- -D warnings`.
+- PASS — `cargo clippy --locked -p splitshare-application --test transfer_logging
+  -- -D warnings`; `cargo fmt --check`; `git diff --check`.
+- Native Windows execution: NOT VERIFIED locally. The new Windows-only regression
+  exercises no-clobber conflicts, cross-directory Unicode renames, replacement and
+  directory moves, reporting native I/O errors on failure. A native CI rerun is
+  required to confirm resolution of the reported upload failure.
+- Browser E2E: NOT APPLICABLE to this Windows storage adapter change.
