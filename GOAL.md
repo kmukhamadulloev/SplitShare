@@ -1,7 +1,7 @@
 # Current project status — 0.1.0
 
-SplitShare's current version is **0.1.0**. Implemented functionality and known
-limitations are recorded in [RELEASE.md](RELEASE.md).
+SplitShare's current version is **0.1.0**. Added features, changes and fixes are
+recorded in [RELEASE.md](RELEASE.md); limitations are in [ISSUES.md](ISSUES.md).
 
 ## Active work
 

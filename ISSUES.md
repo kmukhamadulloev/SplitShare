@@ -57,6 +57,9 @@ verified; schedule work only when its scope is chosen.
 
 ## Packaging
 
+- The local Linux archive is a development candidate; it has not been published.
+  The desktop binary needs GTK3/AppIndicator runtime libraries even with `--no-tray`.
+
 - Linux archive generation and isolated extracted-archive smoke are implemented.
 - [ ] Audit and bundle required third-party notices before public distribution.
 - [ ] Verify the Linux archive on clean supported distributions; local smoke uses
@@ -67,6 +70,8 @@ verified; schedule work only when its scope is chosen.
 - [ ] Linux packaging formats beyond release archive are not defined.
 
 ## Transfers
+
+- Uploads do not resume across process restarts.
 
 - Upload logs now identify transfer/stage/bytes/timings and safe error categories.
   Storage Io and HTTP body errors still do not expose exact OS/network root causes.

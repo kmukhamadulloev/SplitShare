@@ -3,7 +3,8 @@
 SplitShare is a local-first, cross-platform folder sharing application.
 
 Current version: **0.1.0** — development release checkpoint. See
-[release notes](RELEASE.md) for implemented features, validation and limitations.
+[release notes](RELEASE.md) for added features, changes and fixes;
+[ISSUES.md](ISSUES.md) records known issues and limitations.
 
 One device runs SplitShare and exposes a selected folder over the local network. Other devices do **not** need SplitShare installed: they open the host address in a browser, browse the shared virtual filesystem, download files, upload files, create folders, rename items, paste clipboard content, and use the interface from desktop or mobile.
 
