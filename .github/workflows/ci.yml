@@ -2,6 +2,10 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
 jobs:
   check:
     strategy:
@@ -10,6 +14,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/test-release-notes.py
       - uses: dtolnay/rust-toolchain@1.98.0
         with:
           components: rustfmt, clippy

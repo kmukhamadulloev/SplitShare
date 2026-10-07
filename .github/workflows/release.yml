@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/test-release-notes.py
+      - name: Validate version and release notes
+        shell: bash
+        env:
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if [[ "$RELEASE_REF" == refs/tags/* ]]; then
+            python scripts/release-notes.py --tag "$RELEASE_TAG" --output release-notes.md
+          else
+            python scripts/release-notes.py --output release-notes.md
+          fi
+
+  verify:
+    needs: validate
+    uses: ./.github/workflows/ci.yml
+
+  package:
+    needs: [validate, verify]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+          - os: macos-14
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.98.0
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libayatana-appindicator3-dev
+      - run: npm ci --prefix web
+      - run: npm run build --prefix web
+      - run: cargo build --locked --release -p splitshare --target ${{ matrix.target }}
+      - run: python scripts/package-release.py --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: splitshare-${{ matrix.target }}
+          path: target/release-artifacts/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: splitshare-*
+          path: release-artifacts
+          merge-multiple: true
+      - name: Extract release notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/release-notes.py --tag "$RELEASE_TAG" --output release-notes.md
+      - name: Verify archive checksums
+        working-directory: release-artifacts
+        run: sha256sum --check *.sha256
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" release-artifacts/* --verify-tag --title "SplitShare $RELEASE_TAG" --notes-file release-notes.md

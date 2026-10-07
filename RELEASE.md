@@ -4,6 +4,11 @@
 
 ### Added
 
+- GitHub Actions builds for Windows x64, Linux x64 and macOS Intel/Apple Silicon,
+  with downloadable archives, SHA-256 checksums and tag-triggered GitHub Releases
+  using the matching changelog entry.
+- macOS application bundles with branding and bundled dependency license notices.
+
 - Native Rust host with an embedded Vue browser interface.
 - System tray controls for opening the browser, shared folder and Settings,
   starting/stopping sharing, and quitting the app.

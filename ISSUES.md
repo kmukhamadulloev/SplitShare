@@ -6,6 +6,9 @@ verified; schedule work only when its scope is chosen.
 
 ## Foundation
 
+- User reported successful Windows execution on another PC on 2026-10-07. This
+  confirms that manual run, not every native regression or new archive workflow.
+
 - Decisions and resolved dependency choices: [FOUNDATION.md](docs/FOUNDATION.md).
 - [ ] Run configured native Windows/macOS CI checks; only Linux is locally verified.
 - [ ] User-owned follow-up: complete Phase 07 native Windows/macOS tray smoke; Linux native menu/lifecycle smoke is implemented.
@@ -64,11 +67,15 @@ verified; schedule work only when its scope is chosen.
 
 ## Packaging
 
+- [ ] Execute the new Release workflow on GitHub to verify all four native
+  archive jobs; local validation covers Linux packaging and workflow structure.
+
 - The local Linux archive is a development candidate; it has not been published.
   The desktop binary needs GTK3/AppIndicator runtime libraries even with `--no-tray`.
 
 - Linux archive generation and isolated extracted-archive smoke are implemented.
-- [ ] Audit and bundle required third-party notices before public distribution.
+- Dependency license/notice collection is included in the cross-platform archives.
+- [ ] Review dependency licensing obligations; collected files are not a legal audit.
 - [ ] Verify the Linux archive on clean supported distributions; local smoke uses
   installed GTK/AppIndicator libraries and does not prove portable ABI support.
 

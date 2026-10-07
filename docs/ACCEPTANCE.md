@@ -834,3 +834,30 @@ No production filesystem policy or handles were changed.
 - PASS — `cargo fmt --check` and `git diff --check`.
 - Native Windows branch: execution remains pending the user's CI rerun.
 - Frontend/browser checks: NOT APPLICABLE; only a storage test and docs changed.
+
+## GitHub multi-platform release workflow — 2026-10-07
+
+- User evidence: Windows application ran successfully on another PC. This is a
+  manual runtime report, not proof that all automated native checks passed.
+- PASS — `python3 scripts/test-release-notes.py`: three tests cover exact section
+  extraction, category preservation, missing/empty/duplicate entries, version
+  alignment and invalid/mismatched tags.
+- PASS — actionlint 1.7.12 on `.github/workflows/ci.yml` and `release.yml`.
+- PASS — `bash scripts/check.sh`: frontend type/unit/build, Rust format, workspace
+  Clippy and unit/integration/doc tests. No application code changed.
+- PASS — `cargo build --locked --release -p splitshare --target
+  x86_64-unknown-linux-gnu` and `python3 scripts/package-release.py --target
+  x86_64-unknown-linux-gnu`: native Linux archive, embedded assets, upload/download
+  byte equality, HTTP Range and SIGTERM exit from extracted copy with empty PATH.
+- PASS — SHA-256 and archive-member inspection, including matching release notes,
+  project license and dependency inventory; Python syntax and documentation links.
+- PASS — license collection for Linux x64, Windows x64 and macOS ARM/Intel dependency
+  graphs, using pinned upstream supplements for crates omitting license files.
+- NOT VERIFIED locally — Windows/macOS native packaging, app-bundle launch, native
+  UI smoke and remote Actions execution. The workflow gates publication on CI and
+  all four native package jobs. Windows archive smoke force-terminates its process
+  after HTTP checks; it does not claim graceful Quit coverage.
+- NOT APPLICABLE — local browser E2E rerun for workflow/scripts-only changes. The
+  reusable CI workflow still includes its full browser matrix for tagged releases.
+- No commit push, tag creation or GitHub release publication was performed here.
+  GitHub CLI authentication is absent; first remote execution remains pending.

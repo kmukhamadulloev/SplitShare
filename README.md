@@ -140,6 +140,10 @@ To build a verified Linux archive candidate, run `python3 scripts/package-linux.
 The archive and SHA-256 checksum are written under `release/`. See
 [packaging prerequisites and limits](docs/PACKAGING.md).
 
+GitHub Actions also provides a **Release** workflow: manual runs create platform
+artifacts; version tags publish archives with the matching [release notes](RELEASE.md).
+See [GitHub release instructions](docs/PACKAGING.md#github-builds-and-releases).
+
 ## Development
 
 Current functionality is summarized in [RELEASE.md](RELEASE.md). Technical details

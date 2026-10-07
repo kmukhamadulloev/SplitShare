@@ -89,3 +89,52 @@ tray, second-device LAN or QR-scanning acceptance claim.
 The current Cargo development version is retained rather than relabeling this
 candidate as a later release. No tagging or publishing occurs. Third-party license/notice
 collection and distribution compatibility must be completed before public release.
+
+## GitHub builds and releases
+
+The Release workflow mirrors Fetch's tag-based archive flow. Run it manually
+from Actions to build downloadable artifacts without publishing a release. Push
+a version tag such as `v0.1.0` to build and publish **SplitShare v0.1.0** with the
+matching Added/Changed/Fixed content from `RELEASE.md`. Missing/empty/duplicate
+notes and mismatched Rust/frontend/project versions fail before packaging.
+
+The workflow first runs the reusable CI suite, then builds on native runners:
+
+| Runner | Target | Archive |
+|---|---|---|
+| Ubuntu 24.04 | Linux x86_64 | `.tar.gz` |
+| Windows Server 2022 | Windows x86_64 | `.zip` |
+| macOS 14 | Apple Silicon aarch64 | `.tar.gz` with `SplitShare.app` |
+| macOS 15 Intel | macOS x86_64 | `.tar.gz` with `SplitShare.app` |
+
+Archive names are `splitshare-v<version>-<platform>-<architecture>`, each with a
+SHA-256 sidecar. Artifacts are retained for 14 days on workflow runs; tagged release
+assets persist on GitHub Releases. Only the publish job receives contents-write
+permission. No personal access token is required: it uses GitHub's workflow token.
+All native packaging jobs must pass before publishing; checksum verification is
+repeated on the collected assets. Re-running publication for an existing release
+fails rather than silently overwriting its assets or notes.
+
+Each package includes the executable/application, logo, startup guide, version
+notes, project license, third-party notice inventory and available dependency
+license files. Version-pinned upstream supplements live in `docs/third-party/`
+for crates omitting those files; `SOURCES.json` records their provenance. Collection
+is not a legal audit of dependency terms.
+
+`python scripts/package-release.py --target <triple>` packages a previously built
+`target/<triple>/release/` executable and tests its extracted archive. Build the
+frontend immediately before compiling Rust, as the workflow does. macOS packages
+include Info.plist and ICNS branding and are ad-hoc signed; Developer ID signing
+and notarization are not configured. Windows packages are unsigned.
+
+Archive smoke verifies embedded assets, status, real upload/download bytes and
+Range responses on every runner. POSIX hosts exit gracefully via SIGTERM; Windows
+smoke terminates the test process after requests complete, so it does not verify
+graceful tray Quit. Windows/macOS smoke runs only in disposable GitHub runner
+accounts; Linux uses isolated XDG configuration. Native dialogs, QR scans and
+tray interaction remain separate manual coverage.
+
+To release from a checked and committed checkout, push the branch and then the
+matching tag. Workflow setup does not itself push commits or create tags. For
+example, after reviewing 0.1.0: `git tag v0.1.0` and `git push origin v0.1.0`.
+See [archive startup instructions](RELEASE_ARCHIVES.md).
