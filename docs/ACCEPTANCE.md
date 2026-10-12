@@ -861,3 +861,27 @@ No production filesystem policy or handles were changed.
   reusable CI workflow still includes its full browser matrix for tagged releases.
 - No commit push, tag creation or GitHub release publication was performed here.
   GitHub CLI authentication is absent; first remote execution remains pending.
+
+## Upload preview fixture correction — 2026-10-13
+
+The PNG duplicated in mobile-upload, clipboard and browser tests had an invalid
+IDAT CRC (`ef9a4aea` instead of `efa2a75b`). The compressed image data was valid;
+only the checksum changed. Preview assertions now wait for decoded dimensions
+(1 pixel for the PNG fixture, 2 pixels for the real clipboard canvas), avoiding
+visibility assertions that can pass before decoding finishes. Production upload
+and unsupported-image fallback behavior are unchanged.
+
+- PASS — PNG signature, every chunk CRC and compressed scanline validation for all
+  three fixture copies using Python base64/struct/zlib.
+- PASS — `SPLITSHARE_BROWSER_MATRIX=1 npm run test:e2e --prefix web`:
+  124 passed, 4 existing skips, 0 failed across desktop/mobile Chromium, Firefox
+  and WebKit. Both reported Firefox widths pass, including decoded dimensions,
+  confirmation, uploaded-byte equality and cancellation checks.
+- PASS — `npm run build --prefix web`: Vue/TypeScript check and production build.
+- PASS — `git diff --check`.
+- NOT APPLICABLE — Rust unit/integration rerun: only browser tests/docs changed;
+  the E2E suite exercises the existing real Rust server.
+
+The pre-fix focused Firefox run passed locally, so the original CI timing was not
+reproduced here. The invalid fixture checksum is independently verified and the
+final full matrix passes with the corrected data and stronger assertions.

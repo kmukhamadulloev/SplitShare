@@ -46,6 +46,9 @@
 
 ### Fixed
 
+- Invalid PNG fixtures in upload/clipboard browser tests; preview assertions now
+  wait for decoded image dimensions rather than visibility alone.
+
 - Windows sandbox regression handles an OS-blocked upload-directory swap while
   retaining cleanup and symlink-escape assertions.
 

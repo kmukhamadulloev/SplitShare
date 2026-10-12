@@ -82,7 +82,7 @@ test('uploads, drag/drop, file/image/text paste and conflict resolution', async 
   await expect(page.getByRole('region',{name:'Files',exact:true}).getByText(`draft-${suffix}.txt`,{exact:true})).toBeVisible()
   expect(await (await request.get(`/api/v1/files/download?path=/draft-${suffix}.txt`)).text()).toBe('Draft from clipboard')
   await page.locator('main').evaluate(element => {
-    const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSuoAAAAASUVORK5CYII='), c => c.charCodeAt(0))
+    const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII='), c => c.charCodeAt(0))
     const data = new DataTransfer(); data.items.add(new File([bytes],'clipboard.png',{type:'image/png'}))
     // Firefox discards constructor-supplied clipboardData on synthetic events.
     const event = new ClipboardEvent('paste',{bubbles:true,cancelable:true})
@@ -90,6 +90,7 @@ test('uploads, drag/drop, file/image/text paste and conflict resolution', async 
     element.dispatchEvent(event)
   })
   await expect(page.getByRole('img',{name:'Image preview'})).toBeVisible()
+  await expect(page.getByRole('img',{name:'Image preview'})).toHaveJSProperty('naturalWidth',1)
   await page.getByLabel('Filename',{exact:true}).fill(`image-${suffix}.png`)
   expect((await request.get(`/api/v1/files/download?path=/image-${suffix}.png`)).status()).toBe(404)
   await page.getByRole('button',{name:'Upload',exact:true}).click()

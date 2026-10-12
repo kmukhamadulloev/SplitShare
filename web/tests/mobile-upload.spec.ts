@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test'
-const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSuoAAAAASUVORK5CYII='
+const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII='
 
 for (const width of [390,1024]) test(`Upload opens one native picker at width ${width}`, async ({page,request},info) => {
   await page.setViewportSize({width,height:844})
@@ -13,6 +13,7 @@ for (const width of [390,1024]) test(`Upload opens one native picker at width ${
   await chooser.setFiles([{name:'photo.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')},{name:'cancel-photo.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')}])
   const preview = page.getByRole('dialog',{name:'Upload image',exact:true})
   await expect(preview.getByRole('img',{name:'Image preview'})).toBeVisible()
+  await expect(preview.getByRole('img',{name:'Image preview'})).toHaveJSProperty('naturalWidth',1)
   const name = `confirmed-${width}-${info.project.name}.png`
   await preview.getByLabel('Filename',{exact:true}).fill(name)
   expect((await request.get(`/api/v1/files/download?path=/${name}`)).status()).toBe(404)

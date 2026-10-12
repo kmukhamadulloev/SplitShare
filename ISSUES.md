@@ -44,6 +44,10 @@ verified; schedule work only when its scope is chosen.
 
 ## Browser
 
+- The image fixture used by upload/clipboard browser tests had an invalid PNG IDAT
+  checksum. It is corrected, with decoded-dimension assertions added. This is a
+  test-fixture correction; unsupported real images still use the upload fallback.
+
 - [ ] Verify the opt-in video keep-awake fallback on physical iPadOS/Android over
   HTTP, including automatic screen timeout, low-power mode and app switching.
   Playback success does not prove sleep prevention.

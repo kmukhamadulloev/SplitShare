@@ -449,3 +449,8 @@ The foundation smoke starts an unconfigured copied release binary on an explicit
 temporary loopback port. It checks mandatory setup and disabled sharing: file API
 requests return `503 SETUP_REQUIRED`, while a join without a share returns
 `503 SHARE_NOT_CONFIGURED`. Error assertions include endpoint and actual payload.
+
+Upload and clipboard PNG fixtures must have valid chunk checksums. Image import
+tests assert decoded `naturalWidth` as well as visibility so an image that has
+not finished decoding cannot satisfy the preview assertion. The unsupported-image
+test separately verifies the original-file upload fallback.

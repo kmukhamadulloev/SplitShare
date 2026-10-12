@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test'
 import {networkInterfaces} from 'node:os'
 import AxeBuilder from '@axe-core/playwright'
-const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSuoAAAAASUVORK5CYII='
+const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII='
 
 test('Paste opens one neutral editable modal without accessing the clipboard API', async ({page}) => {
   await page.addInitScript(() => Object.defineProperty(navigator,'clipboard',{get:() => {throw new Error('Clipboard API must not be accessed')}}))
@@ -32,6 +32,7 @@ test('pasting image items transforms the same modal and preserves confirmed byte
   const dialog = page.getByRole('dialog',{name:'Upload image',exact:true})
   await expect(dialog).toHaveAttribute('data-original-modal','true')
   await expect(dialog.getByRole('img',{name:'Image preview'})).toBeVisible()
+  await expect(dialog.getByRole('img',{name:'Image preview'})).toHaveJSProperty('naturalWidth',1)
   await expect(dialog.getByRole('textbox',{name:'Paste area',exact:true})).toHaveCount(0)
   const name = `pasted-${info.project.name}.png`
   await dialog.getByLabel('Filename',{exact:true}).fill(name)
@@ -117,6 +118,7 @@ test('real Ctrl+V still imports an image without application clipboard reads', a
   await page.keyboard.press('Control+v')
   const dialog = page.getByRole('dialog',{name:'Upload image',exact:true})
   await expect(dialog.getByRole('img',{name:'Image preview'})).toBeVisible()
+  await expect(dialog.getByRole('img',{name:'Image preview'})).toHaveJSProperty('naturalWidth',2)
   const name = `keyboard-${info.project.name}.png`
   await dialog.getByLabel('Filename',{exact:true}).fill(name)
   await dialog.getByRole('button',{name:'Upload',exact:true}).click()
